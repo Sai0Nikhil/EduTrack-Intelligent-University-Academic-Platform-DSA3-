@@ -1,0 +1,267 @@
+\chapter{System Architecture, Data Engineering \& Interface Design}
+\label{ch:system_architecture}
+
+\section{End-to-End Architectural Topology}
+EduTrack is engineered as a high-performance, modular academic management platform adhering to strict decoupling between the fundamental data structures, algorithmic engines, business domain services, and presentation interfaces. Figure~\ref{fig:system_layers} illustrates the five-tiered software architecture.
+
+\begin{figure}[H]
+\centering
+\begin{tcolorbox}[colback=codebackground,colframe=primaryblue,title=\textbf{EduTrack Layered Architectural Topology}]
+\begin{enumerate}[leftmargin=1.5cm]
+    \item[\textbf{Tier 5:}] \textbf{Dual Presentation Layer}
+    \begin{itemize}
+        \item \texttt{EduTrackCLI}: Terminal-based interactive runner utilizing a standard numbered menu hierarchy ($0$--$8$) for headless server environments.
+        \item \texttt{EduTrackGUI}: Desktop Swing application with an 8-tab visual workspace, customized card layouts, real-time tables, and status meters.
+    \end{itemize}
+    \item[\textbf{Tier 4:}] \textbf{Service Orchestration Layer}
+    \begin{itemize}
+        \item \texttt{AcademicSearchService}, \texttt{PlagiarismDetectionService}, \texttt{ResourceAllocationService}, \texttt{ExamSchedulingService}, \texttt{AnalyticsService}.
+    \end{itemize}
+    \item[\textbf{Tier 3:}] \textbf{Algorithmic Engine Core (Modules 1--6)}
+    \begin{itemize}
+        \item Strings (\texttt{KMP}, \texttt{Z-Algorithm}, \texttt{Rabin-Karp}, \texttt{Aho-Corasick}).
+        \item Suffix Structures (\texttt{SuffixArray}, \texttt{SAIS}, \texttt{KasaiLCP}, \texttt{SuffixAutomaton}).
+        \item Dynamic Programming (\texttt{Levenshtein}, \texttt{Damerau-Levenshtein}, \texttt{MCM}, \texttt{BitmaskDP}, \texttt{OBST}).
+        \item Network Flow (\texttt{FordFulkerson}, \texttt{EdmondsKarp}, \texttt{DinicsAlgorithm}, \texttt{BipartiteMatching}, \texttt{KonigsTheorem}).
+        \item NP-Completeness (\texttt{DpllSatSolver}, Reductions: $\text{SAT} \to \text{CLIQUE} \to \text{IS} \to \text{VC}$, \texttt{VertexCover2Approx}).
+        \item Parallel \& Randomized (\texttt{RandomizedQuickSort}, \texttt{ReservoirSampling}, \texttt{MillerRabin}, \texttt{BlellochScan}, \texttt{ParallelReduce}).
+    \end{itemize}
+    \item[\textbf{Tier 2:}] \textbf{Domain Model \& Business Entities}
+    \begin{itemize}
+        \item \texttt{Course}, \texttt{Student}, \texttt{Faculty}, \texttt{AssignmentSubmission}, \texttt{Classroom}, \texttt{ActivityLog}.
+    \end{itemize}
+    \item[\textbf{Tier 1:}] \textbf{Foundational Data Structures (Zero \texttt{java.util.*})}
+    \begin{itemize}
+        \item \texttt{MyArrayList<T>}, \texttt{MyLinkedList<T>}, \texttt{MyQueue<T>}, \texttt{MyStack<T>}, \texttt{MyHashMap<K,V>}, \texttt{MyMinHeap<T>}, \texttt{DisjointSetUnion}, \texttt{Pair<A,B>}.
+    \end{itemize}
+\end{enumerate}
+\end{tcolorbox}
+\caption{Tiered Architectural Decomposition of the EduTrack Platform.}
+\label{fig:system_layers}
+\end{figure}
+
+A foundational requirement is total encapsulation: no engine class, model entity, or algorithmic module is permitted to import or instantiate classes from \texttt{java.util.*} (with the sole exception of \texttt{java.util.Scanner} used strictly for keyboard input handling in the interactive CLI runner).
+
+% ------------------------------------------------------------------------------
+\section{Domain Model Specifications}
+The domain layer encapsulates academic entities with complete internal collection tracking powered exclusively by \texttt{MyArrayList<T>} and \texttt{MyHashMap<K,V>}.
+
+\subsection{Course Entity (\texttt{Course.java})}
+The \texttt{Course} class represents university course catalog entries. It tracks course codes, titles, departments, credit weightings, maximum enrollment caps, and prerequisite dependencies. Table~\ref{tab:course_schema} details its attributes.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llllX}
+\toprule
+\textbf{Attribute} & \textbf{Data Type} & \textbf{Core Container} & \textbf{Nullability} & \textbf{Description} \\
+\midrule
+\texttt{code} & \texttt{String} & Primitive String & NOT NULL & Unique course identifier (e.g., \texttt{CS301}) \\
+\texttt{title} & \texttt{String} & Primitive String & NOT NULL & Human-readable course title \\
+\texttt{department} & \texttt{String} & Primitive String & NOT NULL & Academic offering department \\
+\texttt{credits} & \texttt{int} & Primitive int & NOT NULL & Academic credit weight ($1$--$4$) \\
+\texttt{semester} & \texttt{int} & Primitive int & NOT NULL & Recommended curricular semester \\
+\texttt{capacity} & \texttt{int} & Primitive int & NOT NULL & Physical laboratory/classroom cap \\
+\texttt{enrolledCount} & \texttt{int} & Primitive int & NOT NULL & Live count of registered students \\
+\texttt{prerequisites} & \texttt{MyArrayList<String>} & Handcrafted Array & NOT NULL & Array of required course codes \\
+\bottomrule
+\end{tabularx}
+\caption{Relational Schema for Course Entity.}
+\label{tab:course_schema}
+\end{table}
+
+\subsection{Student Entity (\texttt{Student.java})}
+The \texttt{Student} entity captures undergraduate and graduate profiles. It maintains cumulative grade point averages (CGPA), earned credits, and dynamic course registrations.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llllX}
+\toprule
+\textbf{Attribute} & \textbf{Data Type} & \textbf{Core Container} & \textbf{Nullability} & \textbf{Description} \\
+\midrule
+\texttt{studentId} & \texttt{String} & Primitive String & NOT NULL & University Roll Number (e.g., \texttt{S101}) \\
+\texttt{name} & \texttt{String} & Primitive String & NOT NULL & Full legal student name \\
+\texttt{email} & \texttt{String} & Primitive String & NOT NULL & Institutional email address \\
+\texttt{department} & \texttt{String} & Primitive String & NOT NULL & Major department \\
+\texttt{semester} & \texttt{int} & Primitive int & NOT NULL & Current academic semester \\
+\texttt{gpa} & \texttt{double} & Primitive double & NOT NULL & Cumulative GPA on a 4.00 scale \\
+\texttt{creditsEarned} & \texttt{int} & Primitive int & NOT NULL & Total verified credit units completed \\
+\texttt{enrolledCourses} & \texttt{MyArrayList<String>} & Handcrafted Array & NOT NULL & Registered course code array \\
+\bottomrule
+\end{tabularx}
+\caption{Relational Schema for Student Entity.}
+\label{tab:student_schema}
+\end{table}
+
+\subsection{Faculty Entity (\texttt{Faculty.java})}
+Faculty records specify academic ranks, departmental affiliations, domain expertise tags, and maximum semester course loads for allocation constraints.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llllX}
+\toprule
+\textbf{Attribute} & \textbf{Data Type} & \textbf{Core Container} & \textbf{Nullability} & \textbf{Description} \\
+\midrule
+\texttt{facultyId} & \texttt{String} & Primitive String & NOT NULL & Faculty employee ID (e.g., \texttt{F101}) \\
+\texttt{name} & \texttt{String} & Primitive String & NOT NULL & Full academic name and title \\
+\texttt{department} & \texttt{String} & Primitive String & NOT NULL & Parent academic department \\
+\texttt{email} & \texttt{String} & Primitive String & NOT NULL & Official communication email \\
+\texttt{expertiseAreas} & \texttt{MyArrayList<String>} & Handcrafted Array & NOT NULL & Array of research specialization keywords \\
+\texttt{maxCourseLoad} & \texttt{int} & Primitive int & NOT NULL & Maximum allowed course teaching quota \\
+\texttt{assignedCourses} & \texttt{MyArrayList<String>} & Handcrafted Array & NOT NULL & Live assigned course codes \\
+\bottomrule
+\end{tabularx}
+\caption{Relational Schema for Faculty Entity.}
+\label{tab:faculty_schema}
+\end{table}
+
+\subsection{Assignment Submission (\texttt{AssignmentSubmission.java})}
+Maintains student document submissions, submission timestamps, full raw text, and cryptographic verification digests for academic integrity inspection.
+\begin{itemize}
+    \item \texttt{submissionId}: Unique submission ticket (e.g., \texttt{SUB-001}).
+    \item \texttt{studentId}: Submitting student reference.
+    \item \texttt{courseCode}: Course assignment context.
+    \item \texttt{title}: Title of submitted project/essay.
+    \item \texttt{submissionDate}: Timestamp string.
+    \item \texttt{content}: Raw text corpus analyzed by string and suffix engines.
+\end{itemize}
+
+\subsection{Classroom Entity (\texttt{Classroom.java})}
+Represents physical campus facilities including lecture halls and specialized computational laboratories, capturing room capacity, building codes, and hardware availability (\texttt{hasLabEquipment}).
+
+\subsection{Activity Log Entity (\texttt{ActivityLog.java})}
+Encapsulates real-time system audit events, capturing event identifiers, ISO timestamps, action classifications (e.g., \texttt{LOGIN}, \texttt{EXAM\_SUBMIT}, \texttt{GRADE\_CHANGE}), user foreign keys, and severity levels.
+
+% ------------------------------------------------------------------------------
+\section{Dataset Engineering \& Synthetic Benchmark Corpus}
+EduTrack includes a comprehensive synthetic academic dataset located in \texttt{data/} structured to rigorously exercise all algorithmic paths.
+
+\subsection{Courses Dataset (\texttt{data/courses.csv})}
+The course catalog contains 10 realistic university courses spanning Computer Science, Mathematics, Electrical Engineering, and Humanities, incorporating prerequisite structures and capacity constraints (Table~\ref{tab:courses_data_sample}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llcccl}
+\toprule
+\textbf{Code} & \textbf{Title} & \textbf{Dept} & \textbf{Credits} & \textbf{Capacity} & \textbf{Prerequisites} \\
+\midrule
+\texttt{CS101} & Introduction to Programming & CS & 4 & 60 & None \\
+\texttt{CS201} & Data Structures and Algorithms & CS & 4 & 50 & \texttt{CS101} \\
+\texttt{CS301} & Design \& Analysis of Algorithms & CS & 4 & 45 & \texttt{CS201} \\
+\texttt{CS302} & Database Management Systems & CS & 3 & 45 & \texttt{CS201} \\
+\texttt{CS401} & Artificial Intelligence & CS & 3 & 40 & \texttt{CS301} \\
+\texttt{CS402} & Computer Networks & CS & 3 & 40 & \texttt{CS201} \\
+\texttt{MA101} & Linear Algebra \& Calculus & MATH & 4 & 70 & None \\
+\texttt{MA201} & Discrete Mathematics & MATH & 3 & 55 & \texttt{MA101} \\
+\texttt{EE201} & Digital Logic \& Computer Org & EE & 4 & 50 & None \\
+\texttt{HU101} & Professional Ethics \& Communication & HUM & 2 & 80 & None \\
+\bottomrule
+\end{tabularx}
+\caption{Complete Course Catalog Corpus in EduTrack Dataset.}
+\label{tab:courses_data_sample}
+\end{table}
+
+\subsection{Students Dataset (\texttt{data/students.csv})}
+The student dataset comprises 12 distinct undergraduate profiles reflecting diverse GPAs ($3.40$--$3.98$), completed credits ($54$--$88$), and semester levels ($3$--$6$), enabling deterministic verification of Randomized QuickSort merit partitioning and reservoir sampling streams.
+
+\subsection{Faculty Dataset (\texttt{data/faculty.csv})}
+The faculty dataset contains 6 professors across CS, Mathematics, and EE. Each faculty record defines distinct domain expertise keywords (e.g., ``Algorithms'', ``Networks'', ``Databases'', ``Machine Learning'') and contractual course limits ($2$ to $3$ courses).
+
+\subsection{Plagiarism Corpus (\texttt{data/assignments/})}
+To benchmark multi-document plagiarism triage, three realistic essay submissions on \textit{``Ethical Implications of Autonomous Artificial Intelligence in Higher Education''} are provided:
+\begin{enumerate}
+    \item \textbf{Alice Smith (\texttt{alice\_ai_ethics.txt}, 1,180 chars):} Original academic treatise discussing algorithmic bias, automated grading accountability, and epistemic fairness.
+    \item \textbf{Bob Jones (\texttt{bob\_ai_ethics.txt}, 1,215 chars):} Contains an identical 278-character verbatim excerpt copied directly from Alice's submission without citation:
+    \begin{quote}
+    \small\slshape
+    ``Autonomous algorithms in educational assessment introduce systemic biases when training distributions fail to encapsulate neurodiverse response typologies. Fairness metrics must enforce statistical parity across demographic cohorts while guaranteeing individual calibration.''\dots
+    \end{quote}
+    \item \textbf{Carol White (\texttt{carol\_ai_ethics.txt}, 1,095 chars):} Negative control submission analyzing independent philosophical perspectives on AI ethics with no overlapping verbatim content.
+\end{enumerate}
+
+\subsection{Library Corpus (\texttt{data/library_docs/algorithms_handbook.txt})}
+A multi-kilobyte academic text documenting fundamental concepts in algorithmic design, asymptotic notation, and network flow invariants. This corpus is indexed by the Suffix Array ($O(N)$ SA-IS) and Suffix Automaton (DAWG) to test sub-millisecond pattern lookup and LCP-based document clustering.
+
+\subsection{Real-time Activity Stream (\texttt{data/activity_stream.log})}
+Contains 14 streaming event records capturing timestamps, IP addresses, user identifiers, and operation codes. This stream drives the streaming Reservoir Sampling engine and Parallel Reduction tree diagnostics.
+
+% ------------------------------------------------------------------------------
+\section{Service Layer Orchestration}
+The service layer coordinates domain entities and foundational algorithms to resolve complex university operational workflows.
+
+\begin{figure}[H]
+\centering
+\begin{tcolorbox}[colback=codebackground,colframe=primaryblue,title=\textbf{EduTrack Service Layer Workflow Mapping}]
+\begin{itemize}
+    \item \textbf{\texttt{AcademicSearchService}:}
+    \begin{itemize}
+        \item Single pattern exact match $\to$ Knuth-Morris-Pratt (\texttt{KmpMatcher}).
+        \item Repetitive prefix substring discovery $\to$ Z-Algorithm (\texttt{ZAlgorithm}).
+        \item Course code and rolling token lookups $\to$ 64-bit Rabin-Karp (\texttt{RabinKarp}).
+        \item Multi-keyword simultaneous triage $\to$ Aho-Corasick Automaton (\texttt{AhoCorasick}).
+    \end{itemize}
+    \item \textbf{\texttt{PlagiarismDetectionService}:}
+    \begin{itemize}
+        \item High-level cross-document similarity score $\to$ Levenshtein \& Damerau-Levenshtein Edit Distance.
+        \item Exact contiguous verbatim plagiarism extraction $\to$ Generalized Suffix Array with Kasai LCP array.
+        \item Instantaneous pattern verification against all submissions $\to$ Suffix Automaton (DAWG).
+    \end{itemize}
+    \item \textbf{\texttt{ResourceAllocationService}:}
+    \begin{itemize}
+        \item One-to-one faculty course assignment $\to$ Hopcroft-Karp Bipartite Matching.
+        \item Multi-capacity lab workstation seat allocation $\to$ Dinic's Blocking Flow Network.
+        \item Minimum bottleneck resource identification $\to$ König's Min-Cut Vertex Cover.
+    \end{itemize}
+    \item \textbf{\texttt{ExamSchedulingService}:}
+    \begin{itemize}
+        \item Timetable conflict satisfiability $\to$ DPLL 3-SAT Solver.
+        \item Conflict reduction pipeline $\to$ $\text{3-SAT} \to \text{CLIQUE} \to \text{IS} \to \text{Vertex Cover}$.
+        \item Minimal proctor assignment $\to$ 2-Approximation Vertex Cover via maximal matching.
+    \end{itemize}
+    \item \textbf{\texttt{AnalyticsService}:}
+    \begin{itemize}
+        \item Merit list ranking $\to$ Randomized QuickSort ($O(N \log N)$ expected).
+        \item Live activity stream auditing $\to$ Reservoir Sampling (Algorithm R).
+        \item High-throughput log metrics $\to$ Blelloch Parallel Prefix Scan \& Parallel Reduce.
+        \item Asymmetric credential generation $\to$ Miller-Rabin Primality Verification.
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+\caption{Algorithmic Mapping across EduTrack Service Coordinators.}
+\label{fig:service_mapping}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+\section{Dual Presentation Architecture: CLI \& GUI}
+
+\subsection{Interactive Terminal CLI Runner (\texttt{EduTrackCLI.java})}
+The terminal interface provides an administrative console for server environments. It features a numbered navigation menu:
+\begin{itemize}
+    \item \textbf{Option 1 (Academic Search Engine):} Executes KMP, Z-Algorithm, Rabin-Karp, and Aho-Corasick over course descriptions.
+    \item \textbf{Option 2 (Plagiarism Detection):} Runs Levenshtein, Damerau-Levenshtein, and Suffix Array Kasai LCP over student essays.
+    \item \textbf{Option 3 (Suffix Indexing):} Builds SA-IS and Suffix Automaton over the library handbook.
+    \item \textbf{Option 4 (Resource Allocation):} Solves Bipartite Matching for faculty and Dinic's Flow for lab seat allocation.
+    \item \textbf{Option 5 (Exam Timetabling):} Solves timetable conflict 3-SAT with DPLL and computes 2-approx proctor placement.
+    \item \textbf{Option 6 (Parallel Analytics):} Executes Randomized QuickSort, Reservoir Sampling, and Blelloch Parallel Scan.
+    \item \textbf{Option 7 (Crypto \& Security):} Tests 64-bit prime candidates using Miller-Rabin.
+    \item \textbf{Option 8 (Comprehensive Verification Suite):} Executes the complete automated test harness validating all 16 algorithmic modules against regression assertions.
+    \item \textbf{Option 0 (Exit):} Cleanly terminates system processes.
+\end{itemize}
+
+\subsection{Swing Desktop Graphical Interface (\texttt{EduTrackGUI.java})}
+The graphical application provides a modern desktop interface built with Java Swing. Configured with a clean, high-contrast palette (Primary Blue \texttt{\#2563EB}, Dark Slate \texttt{\#0F172A}, Emerald Green \texttt{\#10B981}, and Off-White \texttt{\#F8FAFC}), the interface organizes functionality into 8 tabbed panels:
+\begin{enumerate}
+    \item \textbf{Tab 1: Academic Search Engine:} Interactive text inputs for course corpus queries with algorithmic selector (KMP, Z, Rabin-Karp, Aho-Corasick) and formatted match tables.
+    \item \textbf{Tab 2: Plagiarism Detection Center:} Multi-document comparison matrix displaying Levenshtein distance, similarity percentage, and extracted verbatim text excerpts.
+    \item \textbf{Tab 3: Suffix Structure Indexer:} Visual display of suffix arrays, LCP arrays, and DAWG state statistics for indexed academic texts.
+    \item \textbf{Tab 4: Resource Allocation (Network Flow):} Visual graph representation of flow networks, source/sink capacities, Dinic's layer levels, and minimum cut allocations.
+    \item \textbf{Tab 5: Exam Timetabling (NP-Completeness):} Conflict graph inputs, DPLL SAT assignment viewer, and 2-approximation proctor cover metrics.
+    \item \textbf{Tab 6: Parallel Analytics \& Sorting:} Real-time merit ranking visualizer, Blelloch scan input/output comparison, and parallel reduction timing.
+    \item \textbf{Tab 7: Cryptographic Security:} Key generation workbench with Miller-Rabin composite witness inspector and prime status indicators.
+    \item \textbf{Tab 8: System Verification \& Benchmarks:} One-click execution of the 16-algorithm test harness with live status badges (\texttt{[PASS]}), assertion outputs, and microsecond latencies.
+\end{enumerate}
+
+To ensure complete interface responsiveness, all algorithmic workloads are dispatched asynchronously using background execution threads, preventing UI freeze during heavy parallel scans or flow computations.

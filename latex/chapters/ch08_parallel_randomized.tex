@@ -1,0 +1,181 @@
+\chapter{Randomized \& Parallel Algorithms (Module 6)}
+\label{ch:parallel_randomized}
+
+\section{Randomized Algorithmic Paradigms}
+Randomized algorithms utilize pseudo-random choices during execution to break worst-case input symmetry~\cite{clrs2009}:
+\begin{itemize}
+    \item \textbf{Las Vegas Algorithms:} Always terminate with a guaranteed correct output; the running time is a random variable (e.g., Randomized QuickSort).
+    \item \textbf{Monte Carlo Algorithms:} Run within a deterministic time bound; the output is correct with bounded probability (e.g., Miller-Rabin primality test).
+\end{itemize}
+
+% ------------------------------------------------------------------------------
+\section{Randomized QuickSort}
+\subsection{Mathematical Formulation \& Indicator Variables}
+Standard QuickSort suffers from an $O(N^2)$ worst-case running time when presented with sorted or adversarial inputs. Randomized QuickSort selects a pivot uniformly at random from the active sub-array $A[low \dots high]$:
+\begin{equation}
+pivotIndex = low + \Call{NextRandomInt}{high - low + 1}
+\end{equation}
+
+\begin{theorem}
+The expected running time of Randomized QuickSort on any input of size $N$ is:
+\begin{equation}
+E[T(N)] = 2N \ln N + O(N) = O(N \log N)
+\end{equation}
+\end{theorem}
+\begin{proof}
+Let $z_1 < z_2 < \dots < z_N$ denote the sorted elements of the input array. Define the indicator random variable $X_{ij} = I\{z_i \text{ is compared to } z_j\}$. The total comparisons is $X = \sum_{i=1}^{N-1} \sum_{j=i+1}^N X_{ij}$.
+Elements $z_i$ and $z_j$ are compared if and only if either $z_i$ or $z_j$ is selected as a pivot before any element strictly between them ($z_{i+1}, \dots, z_{j-1}$). Because pivots are chosen uniformly at random, every element in $\{z_i, \dots, z_j\}$ is equally likely to be selected first:
+\begin{equation}
+P(z_i \text{ compared to } z_j) = \frac{2}{j - i + 1}
+\end{equation}
+By linearity of expectation:
+\begin{align}
+E[X] &= \sum_{i=1}^{N-1} \sum_{j=i+1}^N \frac{2}{j - i + 1} = \sum_{i=1}^{N-1} \sum_{k=1}^{N-i} \frac{2}{k + 1} \nonumber \\
+&< 2 \sum_{i=1}^{N-1} \sum_{k=1}^N \frac{1}{k} = 2N \cdot H_N = 2N \ln N + O(N)
+\end{align}
+\end{proof}
+
+\subsection{EduTrack Implementation: Student Merit Ranking}
+In EduTrack (\texttt{RandomizedQuickSort.java}), students are ranked according to their CGPA and completed credit hours. A custom 64-bit Linear Congruential Generator (LCG) with XOR-shift mixing ensures uniform random pivot selection without importing \texttt{java.util.Random}. Divya Menon (GPA 3.98, 88 credits) and Shruti Chawla (GPA 3.96, 86 credits) are placed at the top of the university merit register in $O(N \log N)$ expected time.
+
+% ------------------------------------------------------------------------------
+\section{Reservoir Sampling (Algorithm R)}
+\subsection{Mathematical Formulation \& Proof by Induction}
+Reservoir Sampling~\cite{clrs2009} extracts a uniform random sample of size $k$ from a data stream of unknown or unbounded size $N \ge k$ in a single streaming pass:
+\begin{algorithm}[H]
+\caption{Reservoir Sampling (Algorithm R)}
+\begin{algorithmic}[1]
+\Function{ReservoirSample}{$stream, k$}
+    \State $R \gets \textbf{new } \Call{MyArrayList}{k}$
+    \State Store the first $k$ elements of $stream$ into $R$
+    \State $i \gets k$
+    \While{$stream$ has next element $x$}
+        \State $i \gets i + 1$
+        \State $j \gets \Call{RandomInt}{1, i}$ \Comment{Uniform integer in $[1, i]$}
+        \If{$j \le k$}
+            \State $R[j - 1] \gets x$
+        \EndIf
+    \EndWhile
+    \State \Return $R$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}
+At any step $N \ge k$, each item observed in the stream has an exactly equal probability of residing in the reservoir:
+\begin{equation}
+P(\text{Item } m \text{ in reservoir}) = \frac{k}{N}, \quad \forall 1 \le m \le N
+\end{equation}
+\end{theorem}
+\begin{proof}
+By induction on $N$. 
+\textbf{Base Case:} For $N = k$, all $k$ items are placed directly into the reservoir with probability $k/k = 1$.
+\textbf{Inductive Hypothesis:} Assume after step $N - 1$, every item $m \le N - 1$ is in the reservoir with probability $k / (N - 1)$.
+\textbf{Inductive Step:} At step $N$, item $N$ enters the reservoir if $j \le k$, which occurs with probability $k/N$. 
+For any previous item $m < N$, it remains in the reservoir if it was present after step $N - 1$ and was not chosen for replacement by item $N$:
+\begin{align}
+P(m \text{ remains}) &= P(m \text{ in } R_{N-1}) \cdot \left( 1 - P(N \text{ enters}) \cdot P(m \text{ chosen}) \right) \nonumber \\
+&= \frac{k}{N - 1} \cdot \left( 1 - \frac{k}{N} \cdot \frac{1}{k} \right) \nonumber \\
+&= \frac{k}{N - 1} \cdot \left( \frac{N - 1}{N} \right) = \frac{k}{N}
+\end{align}
+\end{proof}
+
+\subsection{EduTrack Domain Application: Streaming Activity Audits}
+EduTrack (\texttt{ReservoirSampling.java}) audits the continuous university event stream (\texttt{activity\_stream.log}). Without storing the entire unbounded event log in memory, it extracts a provably unbiased sample of $k=5$ events for real-time security and activity analysis.
+
+% ------------------------------------------------------------------------------
+\section{Miller-Rabin Primality Test}
+\subsection{Number-Theoretic Foundation \& Witness Construction}
+Fermat's Little Theorem states that for any prime $n$ and $a \not\equiv 0 \pmod n$:
+\begin{equation}
+a^{n-1} \equiv 1 \pmod n
+\end{equation}
+However, composite \textit{Carmichael numbers} (e.g., $561 = 3 \times 11 \times 17$) satisfy Fermat's test for all coprime bases. The Miller-Rabin algorithm~\cite{millerrabin1980} overcomes this by exploiting the non-trivial square roots of unity: if $x^2 \equiv 1 \pmod n$ and $n$ is prime, then $x \equiv \pm 1 \pmod n$.
+
+Factor $n - 1 = 2^s \cdot d$ where $d$ is odd. A base $a$ is a \textit{Fermat-Euler witness to compositeness} if:
+\begin{equation}
+a^d \not\equiv 1 \pmod n \quad \textbf{and} \quad a^{2^r d} \not\equiv -1 \pmod n, \quad \forall 0 \le r < s
+\end{equation}
+
+\subsection{Error Bound and Deterministic Testing}
+For any odd composite $n$, at least $3/4$ of all bases $a < n$ are witnesses. Testing $k$ independent random bases bounds the probability of an erroneous prime classification to:
+\begin{equation}
+P(\text{False Prime}) \le \left( \frac{1}{4} \right)^k
+\end{equation}
+For 64-bit integers ($n < 2^{64}$), testing the deterministic base set:
+\begin{equation}
+\mathcal{B} = \{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37\}
+\end{equation}
+guarantees 100\% deterministic correctness with zero error. EduTrack incorporates binary exponentiation and 64-bit modular multiplication (\texttt{mulMod}) to prevent register overflow during evaluation.
+
+\subsection{EduTrack Domain Application: Cryptographic Student Tokens}
+In EduTrack (\texttt{MillerRabin.java}), Miller-Rabin generates prime moduli and verifies cryptographic session tokens for student graduation certificates, ensuring tamper-proof credentials.
+
+% ------------------------------------------------------------------------------
+\section{Blelloch Work-Efficient Parallel Prefix Scan}
+\subsection{Work-Span Model and Parallel Phases}
+Given an array $A = [x_0, x_1, \dots, x_{n-1}]$, the inclusive prefix scan computes:
+\begin{equation}
+y_i = \sum_{j=0}^i x_j
+\end{equation}
+Naive parallel scan (Hillis-Steele) requires $O(N \log N)$ total work, which is work-inefficient compared to the sequential $O(N)$ algorithm. Blelloch's algorithm~\cite{blelloch1990} achieves \textbf{work-efficiency}:
+\begin{itemize}
+    \item Total Work $T_1 = O(N)$
+    \item Critical Span $T_\infty = O(\log N)$
+\end{itemize}
+It operates in two balanced tree traversals on arrays padded to powers of 2:
+\begin{enumerate}
+    \item \textbf{Up-Sweep (Reduce Phase):} Traverses from leaves to root in $\log_2 N$ parallel steps, computing internal node sums:
+    \begin{equation}
+    A[i + 2^{d+1} - 1] \gets A[i + 2^{d+1} - 1] + A[i + 2^d - 1]
+    \end{equation}
+    \item \textbf{Down-Sweep (Distribution Phase):} Sets the root to 0 ($A[n - 1] \gets 0$) and traverses back down to distribute prefix sums:
+    \begin{align}
+    t &\gets A[i + 2^d - 1] \nonumber \\
+    A[i + 2^d - 1] &\gets A[i + 2^{d+1} - 1] \nonumber \\
+    A[i + 2^{d+1} - 1] &\gets A[i + 2^{d+1} - 1] + t
+    \end{align}
+\end{enumerate}
+
+\subsection{EduTrack Domain Application: Cumulative Academic Analytics}
+In EduTrack (\texttt{BlellochScan.java}), Blelloch Scan computes cumulative student credits and percentile milestones in parallel across large student cohorts.
+
+% ------------------------------------------------------------------------------
+\section{Brent's Theorem \& Parallel Speedup Analysis}
+\subsection{Theoretical Work-Span Scheduling Inequality}
+Let $T_1$ denote total work (sequential execution time) and $T_\infty$ denote the critical span (longest dependency path). Brent's Theorem~\cite{brent1974} bounds the execution time $T_P$ on $P$ parallel processors:
+\begin{equation}
+\frac{T_1}{P} \le T_P \le \frac{T_1 - T_\infty}{P} + T_\infty
+\end{equation}
+The corresponding speedup $S_P$ and parallel efficiency $E_P$ are defined as:
+\begin{equation}
+S_P = \frac{T_1}{T_P}, \quad E_P = \frac{S_P}{P} \times 100\%
+\end{equation}
+The asymptotic speedup ceiling is strictly bounded by $S_\infty = \frac{T_1}{T_\infty}$.
+
+\subsection{EduTrack Implementation \& Modeling Results}
+EduTrack's \texttt{BrentsTheorem.java} models parallel analytics pipelines. For a batch reduction of $N = 1{,}000{,}000$ student activity logs with Work $T_1 = 2{,}000{,}000$ operations and Span $T_\infty = 40$ steps across $P = 8$ CPU cores, Brent's model calculates:
+\begin{itemize}
+    \item $T_P \le \frac{2{,}000{,}000 - 40}{8} + 40 = 250{,}035$ cycles
+    \item Expected Speedup $S_8 = 7.99\times$ (near-ideal linear speedup)
+    \item Parallel Efficiency $E_8 = 99.87\%$
+    \item Asymptotic Speedup Ceiling: $50{,}000\times$
+\end{itemize}
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 12 - Randomized & Parallel Algorithms Tab]}\\[0.2cm]
+        \textit{Capture GUI Module 6 displaying:}\\
+        \textit{1. Randomized QuickSort merit ranking table (top student Divya Menon, GPA 3.98).}\\
+        \textit{2. Reservoir Sampling (k=5) stream audit logs.}\\
+        \textit{3. Miller-Rabin prime token generation and verification.}\\
+        \textit{4. Blelloch Parallel Scan cumulative credits output and Brent's Theorem calculations.}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Randomized and Parallel Algorithm Visualizations in EduTrack UI}
+    \label{fig:screenshot_parallel}
+\end{figure}

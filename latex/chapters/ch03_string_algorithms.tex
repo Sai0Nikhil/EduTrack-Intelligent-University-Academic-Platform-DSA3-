@@ -1,0 +1,223 @@
+\chapter{String Algorithms \& Multi-Pattern Search (Module 1)}
+\label{ch:string_algorithms}
+
+\section{Overview of the String-Matching Problem}
+Given a text $T$ of length $N$ and a pattern $P$ of length $M$ over an alphabet $\Sigma$, the string-matching problem requires identifying all starting indices $i \in \{0, \dots, N - M\}$ such that $T[i \dots i + M - 1] = P[0 \dots M - 1]$. The naive approach compares $P$ against every window of $T$, incurring $O(N \cdot M)$ worst-case time complexity. For university digital libraries containing multi-megabyte syllabi and compendiums, sub-quadratic algorithms are imperative.
+
+\section{Knuth-Morris-Pratt (KMP) Algorithm}
+\subsection{Mathematical Formulation \& The Failure Function}
+The Knuth-Morris-Pratt algorithm~\cite{kmp1977} guarantees $O(N + M)$ deterministic matching with zero backward movement of the text pointer. It preprocesses pattern $P$ into a prefix failure function $\pi: \{0, \dots, M - 1\} \to \{0, \dots, M - 1\}$ defined as:
+\begin{equation}
+\pi[q] = \max \{ k \mid k < q \text{ and } P[0 \dots k - 1] \text{ is a suffix of } P[0 \dots q - 1] \}
+\end{equation}
+When a mismatch occurs between $P[q]$ and $T[i]$, the text pointer $i$ continues advancing, while the pattern pointer resets to $q \gets \pi[q - 1]$.
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Consider the alphabet $\Sigma = \{A, B, C, D\}$ with pattern $P = \text{"ABABCABAB"}$ ($M = 9$).
+\begin{enumerate}
+    \item \textbf{Failure Table Computation:}
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{c|ccccccccc}
+    \toprule
+    $q$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+    \midrule
+    $P[q]$ & A & B & A & B & C & A & B & A & B \\
+    $\pi[q]$ & 0 & 0 & 1 & 2 & 0 & 1 & 2 & 3 & 4 \\
+    \bottomrule
+    \end{tabular}
+    \caption{KMP Prefix Function Table for Pattern \texttt{"ABABCABAB"}}
+    \label{tab:kmp_example_pi}
+    \end{table}
+    \item \textbf{Text Search Trace:}
+    Let $T = \text{"ABABDABACDABABCABAB"}$.
+    \begin{itemize}
+        \item Matches match at indices 0, 1, 2, 3 ($T[0\dots 3] = \text{"ABAB"}$).
+        \item Mismatch at $i = 4$: $T[4] = \text{'D'}$, but $P[4] = \text{'C'}$.
+        \item Shift: $\pi[3] = 2$. Next comparison checks $P[2] = \text{'A'}$ against $T[4] = \text{'D'}$. Mismatch shifts to $\pi[1] = 0$.
+        \item Full occurrence successfully recognized at index 10 without ever retracting the text index $i$.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{EduTrack Domain Application: Course Catalog Retrieval}
+In EduTrack, the KMP engine (\texttt{KmpMatcher.java}) powers course catalog and student query resolution. When students search for terms such as \texttt{"Algorithm"}, \texttt{"Systems"}, or \texttt{"Machine Learning"}, KMP scans 25 course records in linear time, yielding exact character offsets and match counts.
+
+\subsection{Pseudocode \& Complexity Analysis}
+\begin{algorithm}[H]
+\caption{KMP String Search with Zero \texttt{java.util.*}}
+\begin{algorithmic}[1]
+\Function{SearchKMP}{$text, pattern$}
+    \State $N \gets |text|$; \quad $M \gets |pattern|$
+    \State $\pi \gets \Call{ComputePi}{pattern}$
+    \State $matches \gets \textbf{new } \Call{MyArrayList}{}$
+    \State $q \gets 0$
+    \For{$i \gets 0$ \textbf{to} $N - 1$}
+        \While{$q > 0 \textbf{ and } pattern[q] \ne text[i]$}
+            \State $q \gets \pi[q - 1]$
+        \EndWhile
+        \If{$pattern[q] = text[i]$} $q \gets q + 1$ \EndIf
+        \If{$q = M$}
+            \State $matches.\Call{Add}{i - M + 1}$
+            \State $q \gets \pi[q - 1]$
+        \EndIf
+    \EndFor
+    \State \Return $matches$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+\textbf{Complexity:} Preprocessing is $O(M)$ operations; the search phase performs at most $2N$ comparisons since $q$ increments at most $N$ times. Total time: $O(N + M)$; Auxiliary Space: $O(M)$ for the $\pi$ table.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 1 - KMP Course Search Results]}\\[0.2cm]
+        \textit{Capture the EduTrack CLI or GUI showing KMP search for keyword "Algorithm".}\\
+        \textit{Display: Matched course codes (CS201, CS301), occurrences count, and execution time ($\approx 45 \mu s$).}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{KMP Pattern Search Execution Output in EduTrack UI}
+    \label{fig:screenshot_kmp}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+\section{The Z-Algorithm}
+\subsection{Mathematical Formulation \& The Z-Box $[L, R]$}
+Given a string $S$ of length $N$, the Z-Algorithm computes an array $Z$ where $Z[i]$ represents the length of the longest substring starting at $S[i]$ that matches a prefix of $S$:
+\begin{equation}
+Z[i] = \max \{ k \mid S[i \dots i + k - 1] = S[0 \dots k - 1] \}
+\end{equation}
+The algorithm maintains an interval $[L, R]$, termed the \textit{Z-box}, which represents the rightmost segment found so far such that $S[L \dots R] = S[0 \dots R - L]$.
+\begin{itemize}
+    \item If $i > R$: Compute $Z[i]$ via direct character comparisons from index 0. If $Z[i] > 0$, set $L \gets i, R \gets i + Z[i] - 1$.
+    \item If $i \le R$: Let $k = i - L$. If $Z[k] < R - i + 1$, then $Z[i] = Z[k]$ immediately. Otherwise, start comparing from $R + 1$ onwards and update $[L, R]$.
+\end{itemize}
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Let $S = \text{"aabzaa"}$ ($N = 6$).
+\begin{enumerate}
+    \item $i = 0$: By definition, $Z[0] = 6$.
+    \item $i = 1$: $S[1] = \text{'a'} = S[0]$, but $S[2] = \text{'b'} \ne S[1]$. Thus $Z[1] = 1$. Z-box $[L, R] = [1, 1]$.
+    \item $i = 2$: $S[2] = \text{'b'} \ne S[0]$. $Z[2] = 0$.
+    \item $i = 3$: $S[3] = \text{'z'} \ne S[0]$. $Z[3] = 0$.
+    \item $i = 4$: $S[4] = \text{'a'} = S[0]$ and $S[5] = \text{'a'} = S[1]$. End of string. $Z[4] = 2$. Z-box $[L, R] = [4, 5]$.
+    \item Resulting Array: $Z = [6, 1, 0, 0, 2, 0]$.
+\end{enumerate}
+
+\subsection{EduTrack Domain Application: Duplicate Phrase Detection}
+In EduTrack (\texttt{ZAlgorithm.java}), the Z-function is applied to identify internal sentence repetitions in student submissions and search patterns by constructing $S = P \mathbin{\$} T$. Any index $i > |P|$ where $Z[i] \ge |P|$ denotes an exact match.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 2 - Z-Algorithm Phrase Detection]}\\[0.2cm]
+        \textit{Capture the output from Menu 1.2 or GUI Module 1.}\\
+        \textit{Display: Z-box interval evaluation and longest repeated prefix detection across assignment text.}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Z-Algorithm Execution and Repetition Identification in EduTrack}
+    \label{fig:screenshot_z}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+\section{Rabin-Karp Rolling Hash with Double-Hashing}
+\subsection{Mathematical Formulation \& Collision Analysis}
+The Rabin-Karp algorithm~\cite{rabin1987} treats a character string $S[0 \dots M - 1]$ as a polynomial in base $B$ modulo a large prime $M$:
+\begin{equation}
+H(S) = \left( \sum_{j=0}^{M-1} S[j] \cdot B^{M - 1 - j} \right) \pmod M
+\end{equation}
+When the window slides from index $i$ to $i + 1$, the hash value is updated in $O(1)$ operations via:
+\begin{equation}
+H(T[i+1 \dots i+M]) = \left( \left( H(T[i \dots i+M-1]) - T[i] \cdot B^{M-1} \right) \cdot B + T[i+M] \right) \pmod M
+\end{equation}
+
+\subsubsection{Double-Hashing Collision Mitigation}
+To prevent spurious hits from hash collisions without incurring frequent worst-case string comparisons, EduTrack implements simultaneous double-hashing using two distinct prime moduli:
+\begin{align}
+B_1 &= 313, \quad M_1 = 1{,}000{,}000{,}007 \nonumber \\
+B_2 &= 317, \quad M_2 = 1{,}000{,}000{,}009
+\end{align}
+The joint collision probability across random strings is bounded by:
+\begin{equation}
+P(\text{collision}) \le \frac{1}{M_1 \cdot M_2} \approx \frac{1}{10^{18}}
+\end{equation}
+This renders false-positive collision vulnerabilities negligible.
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Search pattern $P = \text{"26"}$ ($M = 2$) in text $T = \text{"31415926535"}$ using base $B = 10$, modulo $M = 13$.
+\begin{itemize}
+    \item $H(P) = (2 \times 10 + 6) \pmod{13} = 26 \pmod{13} = 0$.
+    \item Window 0 ($T[0 \dots 1] = \text{"31"}$): $H_0 = 31 \pmod{13} = 5 \ne 0$.
+    \item Window 1 ($T[1 \dots 2] = \text{"14"}$): $H_1 = (5 - 3 \times 10) \times 10 + 4 = (-25) \times 10 + 4 = 1 \ne 0$.
+    \item When window reaches $\text{"26"}$ at index 6: $H_6 = 26 \pmod{13} = 0$. Hash matches $H(P)$, and character verification confirms match.
+\end{itemize}
+
+\subsection{EduTrack Domain Application: Course Code Indexing}
+In EduTrack (\texttt{RabinKarp.java}), double-hashing indexes course codes (\texttt{CS201}, \texttt{AI301}) and assignment tokens, enabling instantaneous verification of academic prerequisites across the catalog.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 3 - Rabin-Karp Code Search]}\\[0.2cm]
+        \textit{Capture the CLI/GUI executing Rabin-Karp for course code prefix "CS".}\\
+        \textit{Display: Double-hash values ($H_1, H_2$) and exact matching indices across courses.csv.}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Rabin-Karp Double-Hash String Lookup in EduTrack}
+    \label{fig:screenshot_rk}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+\section{Aho-Corasick Multi-Pattern Matching Automaton}
+\subsection{Mathematical Formulation \& Trie Automaton}
+Aho-Corasick~\cite{ahocorasick1975} constructs a finite-state automaton from a dictionary of patterns $\{P_1, \dots, P_k\}$ in $O(\sum |P_i|)$ time. Each state $u$ maintains:
+\begin{itemize}
+    \item Transition links $g(u, c)$: child states corresponding to character $c$.
+    \item Suffix failure links $fail(u)$: points to the state representing the longest proper suffix of the string represented by $u$.
+    \item Output dictionary lists $dict(u)$: patterns terminating at $u$ or reachable via suffix failure links.
+\end{itemize}
+Failure links are computed via Breadth-First Search using our handcrafted \texttt{MyQueue<Node>}. When searching text $T$, the automaton processes each character in $O(1)$ amortized steps, reporting all simultaneous matches in total time $O(|T| + \text{matches})$.
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Let dictionary $\mathcal{D} = \{\text{"he"}, \text{"she"}, \text{"his"}, \text{"hers"}\}$. Text $T = \text{"ushers"}$.
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{0.8cm}
+        \textbf{Aho-Corasick State Transitions:}\\
+        $\text{Root} \xrightarrow{\text{'s'}} (s) \xrightarrow{\text{'h'}} (sh) \xrightarrow{\text{'e'}} (she) \text{ [Output: \"she\"]}$\\
+        $\text{Root} \xrightarrow{\text{'h'}} (h) \xrightarrow{\text{'e'}} (he) \text{ [Output: \"he\"]}$\\
+        Failure Link: $fail(she) = (he)$.\\
+        Text processing of \texttt{"ushers"}: at state \texttt{(she)}, outputs both \texttt{"she"} and \texttt{"he"}. Next character \texttt{'r'} follows $(he) \xrightarrow{\text{'r'}} (her) \xrightarrow{\text{'s'}} (hers)$ to output \texttt{"hers"}.
+        \vspace{0.8cm}
+    \end{minipage}}
+    \caption{State Traversal Example in Aho-Corasick Automaton}
+    \label{fig:ahocorasick_trace}
+\end{figure}
+
+\subsection{EduTrack Domain Application: Academic Taxonomy Tagger}
+EduTrack (\texttt{AhoCorasick.java}) parses textbook chapters in \texttt{algorithms\_handbook.txt} against academic keyword dictionaries (\texttt{"Algorithm"}, \texttt{"Dynamic Programming"}, \texttt{"Suffix"}, \texttt{"Network Flow"}, \texttt{"König"}). All keywords are identified across the text in a single streaming pass.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 4 - Aho-Corasick Multi-Pattern Tagger]}\\[0.2cm]
+        \textit{Capture the GUI/CLI executing Aho-Corasick over algorithms\_handbook.txt.}\\
+        \textit{Display: Table showing 8 simultaneous keywords, character positions, and total match frequency.}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Simultaneous Academic Keyword Tagging via Aho-Corasick in EduTrack}
+    \label{fig:screenshot_ac}
+\end{figure}

@@ -1,0 +1,153 @@
+\chapter{Advanced Dynamic Programming (Module 3)}
+\label{ch:dynamic_programming}
+
+\section{The Dynamic Programming Paradigm}
+Dynamic programming resolves combinatorial optimization problems exhibiting \textbf{optimal substructure} (an optimal solution contains within it optimal solutions to subproblems) and \textbf{overlapping subproblems} (recursive algorithms revisit the same subproblems repeatedly). This chapter explores classical and non-classical DP techniques applied within the EduTrack academic engine.
+
+% ------------------------------------------------------------------------------
+\section{Wagner-Fischer Levenshtein Edit Distance}
+\subsection{Mathematical Recurrence}
+The Levenshtein distance between strings $S_1$ (length $M$) and $S_2$ (length $N$) measures the minimum number of character insertions, deletions, and substitutions required to transform $S_1$ into $S_2$. Let $dp[i][j]$ denote the edit distance between prefixes $S_1[0 \dots i-1]$ and $S_2[0 \dots j-1]$:
+\begin{equation}
+dp[i][j] = \begin{cases}
+i, & \text{if } j = 0 \\
+j, & \text{if } i = 0 \\
+dp[i-1][j-1], & \text{if } S_1[i-1] = S_2[j-1] \\
+1 + \min \begin{cases}
+dp[i-1][j] & \text{(Deletion)} \\
+dp[i][j-1] & \text{(Insertion)} \\
+dp[i-1][j-1] & \text{(Substitution)}
+\end{cases}, & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Transform string $S_1 = \text{"kitten"}$ into $S_2 = \text{"sitting"}$ ($M = 6, N = 7$):
+\begin{table}[H]
+\centering
+\begin{tabular}{c|cccccccc}
+\toprule
+ & $\epsilon$ & s & i & t & t & i & n & g \\
+\midrule
+$\epsilon$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+k & 1 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+i & 2 & 2 & 1 & 2 & 3 & 4 & 5 & 6 \\
+t & 3 & 3 & 2 & 1 & 2 & 3 & 4 & 5 \\
+t & 4 & 4 & 3 & 2 & 1 & 2 & 3 & 4 \\
+e & 5 & 5 & 4 & 3 & 2 & 2 & 3 & 4 \\
+n & 6 & 6 & 5 & 4 & 3 & 3 & 2 & 3 \\
+\bottomrule
+\end{tabular}
+\caption{Wagner-Fischer Dynamic Programming Table for \texttt{"kitten"} $\to$ \texttt{"sitting"}}
+\label{tab:levenshtein_table}
+\end{table}
+The optimal edit distance is $dp[6][7] = 3$ operations:
+1. Substitute \texttt{'k'} $\to$ \texttt{'s'} (\texttt{"sitten"})
+2. Substitute \texttt{'e'} $\to$ \texttt{'i'} (\texttt{"sittin"})
+3. Insert \texttt{'g'} at the end (\texttt{"sitting"})
+
+\subsection{EduTrack Domain Application: Student Query Auto-Correction}
+EduTrack (\texttt{Levenshtein.java}) deploys Wagner-Fischer in \texttt{AcademicSearchService} to resolve student typographical errors. When a student enters \texttt{"Operatng Systms"}, the engine evaluates edit distances against all catalog titles and correctly suggests \texttt{"Operating Systems and Concurrency"} (distance 3).
+
+% ------------------------------------------------------------------------------
+\section{Damerau-Levenshtein Distance with Transpositions}
+\subsection{Mathematical Recurrence for Optimal String Alignment}
+Students frequently swap adjacent keys when typing rapidly (e.g., entering \texttt{"SC201"} instead of \texttt{"CS201"}). Standard Levenshtein treats an adjacent transposition as two separate operations (1 deletion + 1 insertion, or 2 substitutions), resulting in a distance of 2. 
+
+The Damerau-Levenshtein distance extends the recurrence by adding a fourth transition representing adjacent character transposition:
+\begin{equation}
+dp[i][j] = \min \begin{cases}
+dp[i-1][j] + 1 \\
+dp[i][j-1] + 1 \\
+dp[i-1][j-1] + \text{cost} \\
+dp[i-2][j-2] + 1, & \text{if } i, j > 1 \text{ and } S_1[i-1] = S_2[j-2] \text{ and } S_1[i-2] = S_2[j-1]
+\end{cases}
+\end{equation}
+
+\subsection{EduTrack Domain Application: Course Code Transposition Handler}
+In EduTrack (\texttt{DamerauLevenshtein.java}), this handles course code typos. For query \texttt{"SC201"}, Levenshtein returns distance 2, whereas Damerau-Levenshtein correctly identifies it as a single transposition ($dist = 1$), prioritizing \texttt{CS201} as the primary suggestion.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 8 - Levenshtein and Damerau Typo Corrections]}\\[0.2cm]
+        \textit{Capture GUI Module 3 showing Levenshtein query correction for "Operatng Systms"}\\
+        \textit{and Damerau-Levenshtein transposition correction for course code "SC201".}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Dynamic Programming Typo Correction in EduTrack UI}
+    \label{fig:screenshot_dp_typo}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+\section{Matrix-Chain Multiplication (MCM)}
+\subsection{Mathematical Formulation \& The Parenthesization Tree}
+Given a sequence of $n$ matrices $\langle A_1, A_2, \dots, A_n \rangle$ where matrix $A_i$ has dimensions $p_{i-1} \times p_i$, matrix multiplication is associative but non-commutative: $(A_1 A_2) A_3 = A_1 (A_2 A_3)$. However, the scalar multiplication costs can differ by orders of magnitude.
+
+Let $m[i][j]$ denote the minimum number of scalar multiplications needed to compute the product $A_{i \dots j}$. The recurrence is:
+\begin{equation}
+m[i][j] = \begin{cases}
+0, & \text{if } i = j \\
+\min_{i \le k < j} \{ m[i][k] + m[k+1][j] + p_{i-1} p_k p_j \}, & \text{if } i < j
+\end{cases}
+\end{equation}
+A split table $s[i][j]$ records the optimal index $k$ achieving the minimum, enabling recursive reconstruction of the optimal parenthesization.
+
+\subsection{Short Illustrative Example (Independent from Project)}
+Consider 3 matrices with dimension vector $p = \langle 10, 100, 5, 50 \rangle$:
+\begin{itemize}
+    \item $A_1$ is $10 \times 100$, $A_2$ is $100 \times 5$, $A_3$ is $5 \times 50$.
+    \item Parenthesization 1: $((A_1 A_2) A_3)$ requires $(10 \times 100 \times 5) + (10 \times 5 \times 50) = 5{,}000 + 2{,}500 = \mathbf{7{,}500}$ multiplications.
+    \item Parenthesization 2: $(A_1 (A_2 A_3))$ requires $(100 \times 5 \times 50) + (10 \times 100 \times 50) = 25{,}000 + 50{,}000 = \mathbf{75{,}000}$ multiplications.
+\end{itemize}
+The optimal order $((A_1 A_2) A_3)$ yields a \textbf{10-fold reduction} in floating-point operations.
+
+\subsection{EduTrack Domain Application: Academic Analytics Optimization}
+In EduTrack (\texttt{MatrixChainMult.java}), large-scale student academic performance analytics pipelines apply multi-stage projection transformations (e.g., Attendance Matrix $\times$ Quiz Score Matrix $\times$ Exam Matrix $\times$ Department Norm Matrix). The dimensions stored in \texttt{courses.csv} are evaluated by MCM to produce the globally optimal computation order.
+
+% ------------------------------------------------------------------------------
+\section{Bitmask Dynamic Programming: Traveling Academic Auditor}
+\subsection{Mathematical Formulation in $O(2^n \cdot n^2)$}
+The Traveling Salesperson Problem (TSP) is NP-hard. When the number of departments $n \le 20$, Bitmask Dynamic Programming provides an exact optimal solution in $O(2^n \cdot n^2)$ time, compared to $O(n!)$ brute force.
+
+Let $\text{mask} \in \{0, \dots, 2^n - 1\}$ represent the subset of visited vertices encoded as a binary bitmask. Define $dp[\text{mask}][u]$ as the minimum transit cost to visit every department in $\text{mask}$, ending at department $u$:
+\begin{equation}
+dp[\text{mask} \mid (1 \ll v)][v] = \min \left( dp[\text{mask} \mid (1 \ll v)][v], \ dp[\text{mask}][u] + \text{dist}[u][v] \right)
+\end{equation}
+subject to $(mask \ \& \ (1 \ll v)) == 0$. Backtracking through an auxiliary table $parent[\text{mask}][u]$ reconstructs the optimal Hamiltonian tour.
+
+\subsection{EduTrack Domain Application: Campus Auditor Tour}
+In EduTrack (\texttt{BitmaskDP.java}), the university auditor must inspect six campus facilities (Computer Science, AI, Data Science, Mathematics, Electronics, Cybersecurity) starting and finishing at Administration. The bitmask solver constructs the exact minimum transit tour (cost: 104 minutes) across the facility transit matrix.
+
+% ------------------------------------------------------------------------------
+\section{Optimal Binary Search Tree (OBST)}
+\subsection{Mathematical Formulation in $O(n^3)$}
+When keys are accessed with non-uniform probabilities, organizing them into an Optimal Binary Search Tree minimizes the expected search depth. Given sorted keys $k_1 < k_2 < \dots < k_n$ with search probabilities $p_1, \dots, p_n$ and dummy failure intervals $d_0, \dots, d_n$ with probabilities $q_0, \dots, q_n$:
+\begin{equation}
+e[i][j] = \begin{cases}
+q_{i-1}, & \text{if } j = i - 1 \\
+\min_{i \le r \le j} \{ e[i][r-1] + e[r+1][j] + w[i][j] \}, & \text{if } i \le j
+\end{cases}
+\end{equation}
+where $w[i][j] = \sum_{l=i}^j p_l + \sum_{l=i-1}^j q_l$ represents the cumulative sub-tree weight.
+
+\subsection{EduTrack Implementation Details}
+EduTrack (\texttt{OptimalBST.java}) optimizes academic search index structures. Keys such as \texttt{"AI"}, \texttt{"Algorithms"}, and \texttt{"DataStructures"} are organized into a tree with minimal expected access cost ($E = 2.18$), minimizing retrieval latency for the most popular academic subjects.
+
+\subsection{Screenshot \& Verification Specifications}
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering
+        \vspace{1.2cm}
+        \textbf{[PLACEHOLDER: Screenshot 9 - MCM and Bitmask DP Tour Visualizer]}\\[0.2cm]
+        \textit{Capture the GUI Dynamic Programming tab displaying MCM optimal parenthesization}\\
+        \textit{and Bitmask DP Traveling Academic Auditor minimum campus inspection route.}
+        \vspace{1.2cm}
+    \end{minipage}}
+    \caption{Matrix-Chain Multiplication and Bitmask DP Visualizer in EduTrack}
+    \label{fig:screenshot_dp_mcm_tsp}
+\end{figure}

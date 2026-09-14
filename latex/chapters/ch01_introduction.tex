@@ -1,0 +1,70 @@
+\chapter{Introduction \& System Overview}
+\label{ch:introduction}
+
+\section{Background \& Motivation}
+Higher education institutions operate as complex, multi-stakeholder operational environments. Modern universities manage tens of thousands of student records, intricate course catalogs spanning multiple academic departments, dynamic faculty workloads, multi-format assignment submissions, rigorous examination timetables, and real-time streams of digital campus interactions.
+
+As educational institutions transition toward integrated digital campus architectures, the underlying software infrastructure faces critical algorithmic challenges:
+\begin{itemize}
+    \item \textbf{High-Velocity Information Retrieval:} Searching hundreds of course syllabi, student queries, and academic descriptions cannot rely on brute-force scanning without degrading interactive responsiveness.
+    \item \textbf{Academic Integrity \& Document Similarity:} Detecting plagiarism across large repositories of student essays requires cross-document substring matching that scales sub-quadratically with text length.
+    \item \textbf{Optimal Resource Allocation:} Assigning faculty members to eligible courses subject to individual workload caps, and scheduling student laboratory seats under physical capacity constraints, requires modeling capacity-constrained network flows.
+    \item \textbf{Computational Intractability in Timetabling:} Examination timetabling subject to mutual exclusion constraints (ensuring no student or faculty member is scheduled for two exams concurrently) is fundamentally NP-hard, necessitating constraint satisfaction solvers and provable approximation algorithms.
+    \item \textbf{Streaming Big Data Analytics:} Real-time campus learning management systems (LMS) generate continuous event streams that exceed available random-access memory, requiring single-pass streaming algorithms and parallel primitives.
+\end{itemize}
+
+\section{Why the Advanced Algorithm Canon Exists}
+Introductory data structures and algorithms (DSA-1 and DSA-2) establish foundational competency in linear structures (arrays, linked lists, stacks, queues), elementary sorting ($O(N^2)$ and $O(N \log N)$ comparison sorts), and standard graph traversals (Breadth-First Search, Depth-First Search, Dijkstra's algorithm). However, these classical primitives fail when confronted with advanced information engineering challenges:
+\begin{enumerate}
+    \item \textbf{Sub-Quadratic Substring Search:} Naive string matching requires $O(N \cdot M)$ worst-case time, which is prohibitive for indexing large academic textbooks ($N \approx 10^6$ characters). Advanced string algorithms such as Knuth-Morris-Pratt (KMP), the Z-Algorithm, and Suffix Arrays achieve deterministic linear time $O(N + M)$ and logarithmic search $O(M \log N)$.
+    \item \textbf{Global and Local Sequence Alignment:} Determining document similarity and editing distance cannot be achieved via greedy character comparison; it requires dynamic programming with overlapping subproblems (Wagner-Fischer, Damerau-Levenshtein).
+    \item \textbf{Capacity-Constrained Assignment:} Bipartite assignment problems subject to integer capacities cannot be resolved via greedy heuristics or shortest path trees; they require the mathematical machinery of the Max-Flow Min-Cut Theorem (Ford-Fulkerson, Edmonds-Karp, Dinic).
+    \item \textbf{NP-Hard Constraint Satisfaction:} Practical university timetabling contains combinatorial structures isomorphic to 3-SAT, Clique, and Vertex Cover, requiring formal Karp reductions, backtracking SAT solvers, and approximation algorithms with bounded worst-case guarantees.
+    \item \textbf{Streaming and Parallel Processing:} Processing continuous activity data on modern multi-core architectures requires randomized sampling (Reservoir Sampling), primality testing (Miller-Rabin), and work-efficient parallel scan primitives (Blelloch Scan).
+\end{enumerate}
+
+This body of knowledge forms the advanced algorithm canon, systematically expounded in foundational literature including Cormen et al. (CLRS Part VII)~\cite{clrs2009}, Kleinberg and Tardos (Chapters 6--13)~\cite{kleinberg2006}, and Erickson (Chapters 4--12)~\cite{erickson2019}.
+
+\section{The Core Pedagogical Constraint: Zero \texttt{java.util.*} Engine}
+A fundamental principle of this capstone implementation is the \textbf{strict prohibition of the Java Standard Collections Framework (\texttt{java.util.*}) within the algorithm engine core}. In commercial software engineering, standard library abstractions frequently mask asymptotic overheads, dynamic memory reallocations, and internal synchronization costs. 
+
+To demonstrate mastery over algorithmic design, memory management, and complexity theory:
+\begin{tcolorbox}[colback=darkslate!5!white,colframe=primaryblue,title=\textbf{The Zero-\texttt{java.util.*} Core Invariant}]
+All algorithmic components, data model containers, search automata, graph networks, and dynamic programming tables inside \texttt{edutrack.core.*}, \texttt{edutrack.model.*}, \texttt{edutrack.algorithms.*}, \texttt{edutrack.service.*}, and \texttt{edutrack.io.*} are constructed from first principles using primitive arrays, pointers, and custom generic structures. \texttt{java.util.Scanner} is restricted solely to the user interface boundary (\texttt{edutrack.ui.EduTrackCLI}) for reading console terminal input.
+\end{tcolorbox}
+
+\section{System Architecture \& Module Organization}
+EduTrack is architected as a modular, three-tier enterprise system:
+\begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.9\textwidth}
+    \centering
+    \vspace{0.3cm}
+    \textbf{\Large EduTrack System Architecture}\\[0.3cm]
+    \rule{0.85\textwidth}{0.8pt}\\[0.3cm]
+    \textbf{Presentation Layer:}\\
+    Interactive Numbered Terminal CLI (\texttt{EduTrackCLI}) $\longleftrightarrow$ Java Swing Desktop GUI (\texttt{EduTrackGUI})\\[0.4cm]
+    $\Downarrow$\\[0.2cm]
+    \textbf{Service Layer:}\\
+    \texttt{AcademicSearchService} $\cdot$ \texttt{PlagiarismDetectionService} $\cdot$ \texttt{ResourceAllocationService}\\
+    \texttt{ExamSchedulingService} $\cdot$ \texttt{AnalyticsService} $\cdot$ \texttt{DatasetLoader}\\[0.4cm]
+    $\Downarrow$\\[0.2cm]
+    \textbf{Core Algorithmic Engine (Zero \texttt{java.util.*}):}\\
+    \begin{tabular}{cc}
+        \textbf{Module 1 \& 2 (Strings):} & KMP, Z-Algorithm, Rabin-Karp, Aho-Corasick \\
+        \textbf{Module 2 (Suffix Structures):} & Suffix Array, SA-IS, Kasai LCP, Suffix Automaton \\
+        \textbf{Module 3 (Advanced DP):} & Levenshtein, Damerau, MCM, Bitmask DP, OBST \\
+        \textbf{Module 4 (Network Flow):} & Ford-Fulkerson, Edmonds-Karp, Dinic, Bipartite, König \\
+        \textbf{Module 5 (NP-Completeness):} & DPLL SAT, 3-SAT$\to$Clique$\to$IS$\to$VC, 2-Approx VC \\
+        \textbf{Module 6 (Parallel/Random):} & Randomized QS, Reservoir, Miller-Rabin, Blelloch, Brent
+    \end{tabular}\\[0.4cm]
+    $\Downarrow$\\[0.2cm]
+    \textbf{Foundational Infrastructure:}\\
+    \texttt{MyArrayList} $\cdot$ \texttt{MyLinkedList} $\cdot$ \texttt{MyQueue} $\cdot$ \texttt{MyStack} $\cdot$ \texttt{MyHashMap} $\cdot$ \texttt{MyMinHeap} $\cdot$ \texttt{DisjointSetUnion}
+    \vspace{0.3cm}
+    \end{minipage}}
+    \caption{Three-Tier Architecture of the EduTrack Platform}
+    \label{fig:architecture_overview}
+\end{figure}
+
+The subsequent chapters rigorously examine the mathematical theory, worked examples, system implementation, and experimental validation of each module.

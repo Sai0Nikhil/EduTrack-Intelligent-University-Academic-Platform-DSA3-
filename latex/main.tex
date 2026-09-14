@@ -1,0 +1,155 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% ==============================================================================
+% PACKAGES & CONFIGURATION
+% ==============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{cite}
+
+% Color Definitions
+\definecolor{primaryblue}{RGB}{37, 99, 235}
+\definecolor{darkslate}{RGB}{15, 23, 42}
+\definecolor{codegreen}{RGB}{16, 185, 129}
+\definecolor{codegray}{RGB}{100, 116, 139}
+\definecolor{codebackground}{RGB}{248, 250, 252}
+
+% Hyperlink configuration
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    citecolor=primaryblue,
+    urlcolor=primaryblue
+}
+
+% Code Listing configuration
+\lstdefinestyle{javastyle}{
+    backgroundcolor=\color{codebackground},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{primaryblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{orange!80!black},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=lines
+}
+\lstset{style=javastyle}
+
+% Header and Footer styling
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\slshape \leftmark}
+\fancyhead[R]{\slshape EduTrack Academic Platform}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{invariant}{Loop Invariant}[chapter]
+
+% ==============================================================================
+% DOCUMENT BEGINS
+% ==============================================================================
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    
+    {\Huge \bfseries EduTrack: Intelligent University Academic Platform\par}
+    \vspace{0.6cm}
+    {\LARGE \bfseries An Advanced Algorithmic Architecture Built from First Principles\par}
+    \vspace{0.4cm}
+    {\large \slshape Technical Specification, Asymptotic Complexity Analysis, and Implementation Report\par}
+    
+    \vspace{1.5cm}
+    \rule{\linewidth}{1.5pt}\par
+    \vspace{0.5cm}
+    {\large \textbf{Design and Analysis of Algorithms (DSA-3) Capstone Project}}\par
+    \vspace{0.2cm}
+    {\normalsize Covering Modules 1--6: String Algorithms, Suffix Structures, Advanced DP, Network Flow, NP-Completeness, and Randomized/Parallel Primitives}\par
+    \vspace{0.5cm}
+    \rule{\linewidth}{1.5pt}\par
+    
+    \vspace{1.8cm}
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \large
+            \textbf{Core Architectural Invariant:}\\
+            \textit{Strict Zero-java.util.* Engine Core}\\
+            \textit{All Data Structures Hand-Built}
+        \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \large
+            \textbf{System Platforms:}\\
+            \textit{Native Terminal CLI Engine}\\
+            \textit{Java Swing Desktop GUI App}
+        \end{flushright}
+    \end{minipage}
+    
+    \vfill
+    {\large \today}\par
+\end{titlepage}
+
+% Front Matter
+\pagenumbering{roman}
+
+\input{chapters/abstract}
+
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+\listofalgorithms
+\newpage
+
+% Main Chapters
+\pagenumbering{arabic}
+
+\input{chapters/ch01_introduction}
+\input{chapters/ch02_core_structures}
+\input{chapters/ch03_string_algorithms}
+\input{chapters/ch04_suffix_structures}
+\input{chapters/ch05_dynamic_programming}
+\input{chapters/ch06_network_flow}
+\input{chapters/ch07_np_completeness}
+\input{chapters/ch08_parallel_randomized}
+\input{chapters/ch09_system_architecture}
+\input{chapters/ch10_evaluation_screenshots}
+\input{chapters/ch11_conclusion}
+
+% Bibliography
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

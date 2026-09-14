@@ -1,0 +1,154 @@
+\chapter{Foundational Zero-\texttt{java.util.*} Infrastructure}
+\label{ch:core_structures}
+
+\section{Design Rationale \& The Potential Method}
+In accordance with the project's pedagogical constraints, no pre-packaged data structures from \texttt{java.util.*} are employed inside the EduTrack algorithm core. Every foundational collection has been engineered from raw pointers, primitive arrays, and mathematical invariants. This chapter documents their formal specification, asymptotic complexity, and implementation.
+
+\section{Dynamic Generic Array List (\texttt{MyArrayList<T>})}
+\subsection{Specification and Dynamic Resizing Invariant}
+\texttt{MyArrayList<T>} maintains an internal buffer \texttt{Object[] elements} of capacity $C$ and an active element count $S$. When $S = C$, inserting an element requires allocating a new array of size $2C$ and copying existing elements via \texttt{System.arraycopy}.
+
+\begin{invariant}
+At any point during execution, $0 \le S \le C$. Elements residing at indices $0 \le i < S$ are valid non-null references (or explicitly stored nulls), while elements at $S \le j < C$ are maintained as garbage-collected nulls upon removal.
+\end{invariant}
+
+\subsection{Amortized Analysis via the Potential Method}
+Let $c_i$ denote the actual cost of the $i$-th insertion operation:
+\begin{equation}
+c_i = \begin{cases}
+1, & \text{if } S < C \\
+S + 1, & \text{if } S = C \text{ (expansion occurs)}
+\end{cases}
+\end{equation}
+Define the potential function $\Phi(D_i)$ after the $i$-th operation as:
+\begin{equation}
+\Phi(D_i) = 2S_i - C_i
+\end{equation}
+Immediately following an expansion from $C/2$ to $C$, $S = C/2 + 1$, giving $\Phi(D) = 2(C/2 + 1) - C = 2 \ge 0$. Right before an expansion, $S = C$, so $\Phi(D) = 2C - C = C$. Thus, $\Phi(D_i) \ge \Phi(D_0) = 0$ for all $i$.
+
+The amortized cost $\hat{c}_i$ is defined as:
+\begin{equation}
+\hat{c}_i = c_i + \Phi(D_i) - \Phi(D_{i-1})
+\end{equation}
+\begin{itemize}
+    \item \textbf{Case 1: No expansion ($S < C$).}
+    $c_i = 1$. $\Delta \Phi = (2(S+1) - C) - (2S - C) = 2$.
+    \begin{equation}
+    \hat{c}_i = 1 + 2 = 3 = O(1)
+    \end{equation}
+    \item \textbf{Case 2: Expansion occurs ($S = C$).}
+    $c_i = S + 1 = C + 1$. The new capacity is $2C$, and new size is $C + 1$.
+    \begin{align}
+    \Delta \Phi &= (2(C + 1) - 2C) - (2C - C) \nonumber \\
+    &= 2 - C
+    \end{align}
+    \begin{equation}
+    \hat{c}_i = (C + 1) + (2 - C) = 3 = O(1)
+    \end{equation}
+\end{itemize}
+Therefore, every append operation runs in \textbf{amortized $O(1)$ time}. Random access via \texttt{get(index)} operates in deterministic $O(1)$ time.
+
+\section{Doubly-Linked List (\texttt{MyLinkedList<T>})}
+\texttt{MyLinkedList<T>} maintains discrete heap-allocated nodes, each containing references to \texttt{prev}, \texttt{next}, and the generic data payload. It maintains explicit pointers to \texttt{head} and \texttt{tail}.
+\begin{itemize}
+    \item \texttt{addFirst(item)}, \texttt{addLast(item)}: $O(1)$ deterministic time via pointer rewiring.
+    \item \texttt{removeFirst()}, \texttt{removeLast()}: $O(1)$ deterministic time.
+    \item Invariant: For any interior node $u$, $u.\text{next}.\text{prev} == u$ and $u.\text{prev}.\text{next} == u$.
+\end{itemize}
+
+\section{FIFO Queue (\texttt{MyQueue<T>}) \& LIFO Stack (\texttt{MyStack<T>})}
+Both linear structures are hand-built to supply graph and search algorithms with deterministic queueing:
+\begin{itemize}
+    \item \texttt{MyQueue<T>}: Implemented as a singly-linked list with head and tail pointers. \texttt{enqueue()} appends at tail in $O(1)$; \texttt{dequeue()} extracts from head in $O(1)$. It forms the foundation for Breadth-First Search (Edmonds-Karp), level-graph construction (Dinic), and Aho-Corasick failure link propagation.
+    \item \texttt{MyStack<T>}: Implemented as an array-backed LIFO container. \texttt{push()} and \texttt{pop()} operate at index \texttt{top} in $O(1)$ amortized time. It supports Depth-First Search (Ford-Fulkerson) and recursive backtracking.
+\end{itemize}
+
+\section{Separate-Chaining Hash Map (\texttt{MyHashMap<K, V>})}
+\subsection{Architecture and Bitwise Avalanche Mixing}
+\texttt{MyHashMap<K, V>} organizes entries into an array of linked list buckets with initial capacity $16$ and load factor threshold $\alpha = 0.75$.
+To guard against clustering under non-uniform key hash distributions, a bitwise scrambling transform is applied prior to bucket indexing:
+\begin{equation}
+h = \text{key.hashCode}(); \quad h = h \oplus (h \ggg 16); \quad \text{index} = (h \ \& \ \text{0x7fffffff}) \pmod{\text{table.length}}
+\end{equation}
+This bitwise shift ensures that higher-order bits influence lower-order bucket assignments, minimizing collision chains.
+
+\subsection{Asymptotic Complexity \& Rehashing}
+When the ratio $S / C \ge 0.75$, \texttt{resize()} doubles the bucket array to $2C$ and re-hashes every existing entry. Under the assumption of simple uniform hashing, the expected length of any chain is bounded by $\alpha = 0.75$:
+\begin{equation}
+E[T_{\text{lookup}}] = 1 + \frac{\alpha}{2} = 1 + 0.375 = O(1)
+\end{equation}
+
+\section{Binary Min-Heap Priority Queue (\texttt{MyMinHeap<T>})}
+\texttt{MyMinHeap<T>} stores elements in an array-backed complete binary tree satisfying the heap invariant:
+\begin{equation}
+A[\text{parent}(i)] \le A[i], \quad \text{where } \text{parent}(i) = \left\lfloor \frac{i - 1}{2} \right\rfloor
+\end{equation}
+Children reside at $\text{left}(i) = 2i + 1$ and $\text{right}(i) = 2i + 2$.
+\begin{itemize}
+    \item \texttt{insert(item)}: Appends item at index $S$ and executes \texttt{swim(S)}: restores heap ordering along the path to the root in $O(\log N)$ time.
+    \item \texttt{extractMin()}: Swaps $A[0]$ with $A[S-1]$, decrements size, and executes \texttt{sink(0)}: bubbles the root element downwards by swapping with the smaller child in $O(\log N)$ time.
+\end{itemize}
+
+\section{Disjoint Set Union (\texttt{DisjointSetUnion})}
+\subsection{Path Compression and Union-by-Rank}
+The DSU structure represents disjoint partitions of elements $0 \dots N-1$. It maintains arrays \texttt{parent[]} and \texttt{rank[]}:
+\begin{algorithm}[H]
+\caption{Disjoint Set Union with Path Compression and Union-by-Rank}
+\begin{algorithmic}[1]
+\Function{Find}{$u$}
+    \State $root \gets u$
+    \While{$root \ne parent[root]$}
+        \State $root \gets parent[root]$
+    \EndWhile
+    \State $curr \gets u$ \Comment{Path Compression Phase}
+    \While{$curr \ne root$}
+        \State $nxt \gets parent[curr]$
+        \State $parent[curr] \gets root$
+        \State $curr \gets nxt$
+    \EndWhile
+    \State \Return $root$
+\EndFunction
+\Function{Union}{$u, v$}
+    \State $r_u \gets \Call{Find}{u}$; \quad $r_v \gets \Call{Find}{v}$
+    \If{$r_u = r_v$} \Return \textbf{false} \EndIf
+    \If{$rank[r_u] < rank[r_v]$}
+        \State $parent[r_u] \gets r_v$
+    \ElsIf{$rank[r_u] > rank[r_v]$}
+        \State $parent[r_v] \gets r_u$
+    \Else
+        \State $parent[r_v] \gets r_u$; \quad $rank[r_u] \gets rank[r_u] + 1$
+    \EndIf
+    \State \Return \textbf{true}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Tarjan's Bound via the Inverse Ackermann Function}
+\begin{theorem}
+For any sequence of $M$ \texttt{Find} and \texttt{Union} operations on $N$ objects using both path compression and union-by-rank, the total running time is:
+\begin{equation}
+O(M \cdot \alpha(N))
+\end{equation}
+where $\alpha(N)$ is the extremely slow-growing inverse Ackermann function.
+\end{theorem}
+For all physically realizable universe sizes ($N \le 10^{80}$), $\alpha(N) \le 4$, establishing essentially constant amortized time per operation.
+
+\section{Summary of Infrastructure Complexity}
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lXll}
+\toprule
+\textbf{Custom Structure} & \textbf{Internal Architecture} & \textbf{Time Complexity} & \textbf{Space Complexity} \\
+\midrule
+\texttt{MyArrayList<T>} & Dynamic array with $2\times$ doubling & Amortized $O(1)$ append, $O(1)$ lookup & $O(N)$ \\
+\texttt{MyLinkedList<T>} & Doubly-linked nodes & $O(1)$ insert/remove first/last & $O(N)$ \\
+\texttt{MyQueue<T>} & Linked FIFO queue & $O(1)$ enqueue, $O(1)$ dequeue & $O(N)$ \\
+\texttt{MyStack<T>} & LIFO array buffer & $O(1)$ push, $O(1)$ pop & $O(N)$ \\
+\texttt{MyHashMap<K, V>} & Chained hash table, avalanche mixing & Expected $O(1)$ get/put & $O(N + C)$ \\
+\texttt{MyMinHeap<T>} & Binary complete tree in array & $O(\log N)$ insert/extract & $O(N)$ \\
+\texttt{DisjointSetUnion} & Rank array + path compression & $O(\alpha(N))$ amortized find/union & $O(N)$ \\
+\bottomrule
+\end{tabularx}
+\caption{Asymptotic Performance Guarantee of Custom Foundational Infrastructure}
+\label{tab:core_structures_summary}
+\end{table}
