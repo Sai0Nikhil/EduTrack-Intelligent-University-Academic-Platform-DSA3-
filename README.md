@@ -135,6 +135,8 @@ The CLI offers numbered menu navigation:
   [5] NP-Completeness, Reductions & Approximation (SAT, 3-SAT->Clique->IS->VC, 2-Approx)
   [6] Randomized & Parallel Algorithms (QuickSort, Reservoir, Miller-Rabin, Scan, Brent)
   [7] Run Full Integrated Verification & Benchmark Suite
+  [8] Interactive Algorithm Showdown / Benchmark Arena (Head-to-Head Races)
+  [9] Launch EduTrack Graphical User Interface (GUI)
   [0] Exit EduTrack
 ================================================================================
 ```

@@ -32,6 +32,7 @@ import edutrack.model.Faculty;
 import edutrack.model.Student;
 import edutrack.service.AcademicSearchService;
 import edutrack.service.AnalyticsService;
+import edutrack.service.BenchmarkArenaService;
 import edutrack.service.ExamSchedulingService;
 import edutrack.service.PlagiarismDetectionService;
 import edutrack.service.ResourceAllocationService;
@@ -61,6 +62,7 @@ public class EduTrackGUI extends JFrame {
     private final ResourceAllocationService allocationService;
     private final ExamSchedulingService examService;
     private final AnalyticsService analyticsService;
+    private final BenchmarkArenaService arenaService;
 
     // Colors
     private static final Color BG_DARK = new Color(24, 28, 36);
@@ -88,6 +90,7 @@ public class EduTrackGUI extends JFrame {
         this.allocationService = new ResourceAllocationService(faculty, courses);
         this.examService = new ExamSchedulingService(courses);
         this.analyticsService = new AnalyticsService(students, courses);
+        this.arenaService = new BenchmarkArenaService();
 
         initUI();
     }
@@ -117,6 +120,7 @@ public class EduTrackGUI extends JFrame {
         tabbedPane.addTab("  M5: NP-Reductions  ", createNPCompletenessTab());
         tabbedPane.addTab("  M6: Parallel & Random  ", createParallelRandomTab());
         tabbedPane.addTab("  Verification Suite  ", createBenchmarkTab());
+        tabbedPane.addTab("  🏆 Benchmark Arena  ", createBenchmarkArenaTab());
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         setContentPane(mainPanel);
@@ -540,16 +544,16 @@ public class EduTrackGUI extends JFrame {
     private JPanel createNetworkFlowTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(BG_DARK);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
 
-        JButton btnBipartite = new JButton("Solve Faculty-to-Course Bipartite Matching");
+        JButton btnBipartite = new JButton("Solve Faculty Bipartite Matching");
         btnBipartite.setBackground(ACCENT_BLUE);
         btnBipartite.setForeground(Color.WHITE);
 
-        JButton btnFlowCompare = new JButton("Flow Shootout: FF vs EK vs Dinic");
+        JButton btnFlowCompare = new JButton("Dinic Lab Flow Network");
         btnFlowCompare.setBackground(ACCENT_AMBER);
         btnFlowCompare.setForeground(Color.WHITE);
 
@@ -563,24 +567,34 @@ public class EduTrackGUI extends JFrame {
 
         panel.add(topControls, BorderLayout.NORTH);
 
+        GraphVisualizerPanel graphPanel = new GraphVisualizerPanel();
+        graphPanel.setMode(GraphVisualizerPanel.GraphMode.BIPARTITE_FACULTY);
+
         JTextArea flowArea = new JTextArea();
-        flowArea.setFont(new Font("Consolas", Font.PLAIN, 13));
+        flowArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         flowArea.setEditable(false);
         flowArea.setBackground(new Color(15, 23, 42));
         flowArea.setForeground(new Color(226, 232, 240));
-        panel.add(new JScrollPane(flowArea), BorderLayout.CENTER);
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, graphPanel, new JScrollPane(flowArea));
+        splitPane.setDividerLocation(620);
+        splitPane.setResizeWeight(0.60);
+        panel.add(splitPane, BorderLayout.CENTER);
 
         btnBipartite.addActionListener(e -> {
+            graphPanel.setMode(GraphVisualizerPanel.GraphMode.BIPARTITE_FACULTY);
             BipartiteMatching.AssignmentResult res = allocationService.assignFacultyToCourses();
             flowArea.setText(res.toString());
         });
 
         btnFlowCompare.addActionListener(e -> {
+            graphPanel.setMode(GraphVisualizerPanel.GraphMode.DINIC_FLOW_NETWORK);
             String report = allocationService.compareFlowAlgorithms(120, 25, 8);
             flowArea.setText(report);
         });
 
         btnKonig.addActionListener(e -> {
+            graphPanel.setMode(GraphVisualizerPanel.GraphMode.BIPARTITE_FACULTY);
             KonigsTheorem.ConflictBottleneck bottleneck = allocationService.analyzeConflictBottlenecks();
             flowArea.setText(bottleneck.toString());
         });
@@ -594,9 +608,9 @@ public class EduTrackGUI extends JFrame {
     private JPanel createNPCompletenessTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(BG_DARK);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
 
         JButton btnSAT = new JButton("Run DPLL SAT Solver (Exam Timetable)");
@@ -617,14 +631,22 @@ public class EduTrackGUI extends JFrame {
 
         panel.add(topControls, BorderLayout.NORTH);
 
+        GraphVisualizerPanel graphPanel = new GraphVisualizerPanel();
+        graphPanel.setMode(GraphVisualizerPanel.GraphMode.EXAM_VERTEX_COVER);
+
         JTextArea npArea = new JTextArea();
-        npArea.setFont(new Font("Consolas", Font.PLAIN, 13));
+        npArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         npArea.setEditable(false);
         npArea.setBackground(new Color(15, 23, 42));
         npArea.setForeground(new Color(226, 232, 240));
-        panel.add(new JScrollPane(npArea), BorderLayout.CENTER);
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, graphPanel, new JScrollPane(npArea));
+        splitPane.setDividerLocation(620);
+        splitPane.setResizeWeight(0.60);
+        panel.add(splitPane, BorderLayout.CENTER);
 
         btnSAT.addActionListener(e -> {
+            graphPanel.setMode(GraphVisualizerPanel.GraphMode.EXAM_VERTEX_COVER);
             DpllSatSolver.SatResult sat = examService.solveExamTimetableSAT(6, 3);
             StringBuilder sb = new StringBuilder();
             sb.append("=== DPLL Boolean Satisfiability (SAT) Solver ===\n");
@@ -639,6 +661,7 @@ public class EduTrackGUI extends JFrame {
         });
 
         btnApprox.addActionListener(e -> {
+            graphPanel.setMode(GraphVisualizerPanel.GraphMode.EXAM_VERTEX_COVER);
             VertexCover2Approx.ApproxResult approx = examService.allocateInvigilatorsApprox(15);
             StringBuilder sb = new StringBuilder();
             sb.append("=== Vertex Cover 2-Approximation via Maximal Matching ===\n");
@@ -647,11 +670,12 @@ public class EduTrackGUI extends JFrame {
             sb.append("• Assigned Proctor Course Count     : ").append(approx.approxCoverSize).append("\n");
             sb.append("• Maximal Matching Size             : ").append(approx.maximalMatching.size()).append("\n");
             sb.append("• Provable Approximation Bound      : |VC| <= 2 * OPT\n\n");
-            sb.append("Proctored Courses: ");
+            sb.append("Proctored Courses (Gold Nodes ★ in 2D Visualizer):\n");
             for (int i = 0; i < approx.coverVertices.size(); i++) {
-                sb.append(courses.get(approx.coverVertices.get(i)).getCode()).append(" ");
+                sb.append(" • ").append(courses.get(approx.coverVertices.get(i)).getCode()).append(" (")
+                  .append(courses.get(approx.coverVertices.get(i)).getTitle()).append(")\n");
             }
-            sb.append("\n");
+            sb.append("\nNotice in the 2D visual canvas: every conflict edge touches at least one glowing proctor node!\n");
             npArea.setText(sb.toString());
         });
 
@@ -788,6 +812,145 @@ public class EduTrackGUI extends JFrame {
         btnRunAll.addActionListener(e -> {
             model.setRowCount(0);
             runGuiBenchmarks(model);
+        });
+
+        return panel;
+    }
+
+    // =========================================================================
+    // TAB 9: ALGORITHM BENCHMARK ARENA
+    // =========================================================================
+    private JPanel createBenchmarkArenaTab() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BG_DARK);
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
+        topControls.setBackground(BG_CARD);
+
+        JLabel lblMatchup = new JLabel("Matchup:");
+        lblMatchup.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblMatchup.setForeground(Color.WHITE);
+
+        String[] matchups = {
+                "1. String Search: KMP vs Z-Algo vs Rabin-Karp vs Naive",
+                "2. Network Flow: Dinic vs Edmonds-Karp vs Ford-Fulkerson",
+                "3. Suffix Indexing: Linear SA-IS vs Suffix Array vs DAWG",
+                "4. Dynamic Programming: Levenshtein vs Damerau vs MCM",
+                "5. Parallel & Sorting: Blelloch Scan vs QuickSort vs Reduce"
+        };
+        JComboBox<String> comboMatchups = new JComboBox<>(matchups);
+        comboMatchups.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JLabel lblScale = new JLabel("Scale:");
+        lblScale.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblScale.setForeground(Color.WHITE);
+
+        String[] scales = {"Small (10K units)", "Medium (40K units)", "Large (100K units)"};
+        JComboBox<String> comboScale = new JComboBox<>(scales);
+        comboScale.setSelectedIndex(1);
+        comboScale.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JButton btnRace = new JButton("⚡ START ALGORITHM RACE");
+        btnRace.setBackground(ACCENT_GREEN);
+        btnRace.setForeground(Color.WHITE);
+        btnRace.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setPreferredSize(new Dimension(140, 22));
+        progressBar.setVisible(false);
+
+        topControls.add(lblMatchup);
+        topControls.add(comboMatchups);
+        topControls.add(lblScale);
+        topControls.add(comboScale);
+        topControls.add(btnRace);
+        topControls.add(progressBar);
+
+        panel.add(topControls, BorderLayout.NORTH);
+
+        BenchmarkBarChartPanel chartPanel = new BenchmarkBarChartPanel();
+
+        JTextArea telemetryArea = new JTextArea();
+        telemetryArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        telemetryArea.setEditable(false);
+        telemetryArea.setBackground(new Color(15, 23, 42));
+        telemetryArea.setForeground(new Color(226, 232, 240));
+
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, chartPanel, new JScrollPane(telemetryArea));
+        split.setDividerLocation(340);
+        split.setResizeWeight(0.65);
+        panel.add(split, BorderLayout.CENTER);
+
+        btnRace.addActionListener(e -> {
+            int selectedIndex = comboMatchups.getSelectedIndex();
+            int scaleIndex = comboScale.getSelectedIndex();
+            int scale = scaleIndex == 0 ? 10000 : (scaleIndex == 1 ? 40000 : 100000);
+
+            btnRace.setEnabled(false);
+            progressBar.setVisible(true);
+            progressBar.setIndeterminate(true);
+            telemetryArea.setText(">>> Running algorithm showdown in background thread...\n");
+
+            SwingWorker<BenchmarkArenaService.ShowdownCategory, Void> worker = new SwingWorker<BenchmarkArenaService.ShowdownCategory, Void>() {
+                @Override
+                protected BenchmarkArenaService.ShowdownCategory doInBackground() {
+                    switch (selectedIndex) {
+                        case 0:
+                            return arenaService.runStringSearchShowdown(scale);
+                        case 1:
+                            return arenaService.runNetworkFlowShowdown(scaleIndex == 0 ? 24 : (scaleIndex == 1 ? 40 : 80));
+                        case 2:
+                            return arenaService.runSuffixIndexingShowdown(scale);
+                        case 3:
+                            return arenaService.runDynamicProgrammingShowdown(scaleIndex == 0 ? 250 : (scaleIndex == 1 ? 600 : 1200));
+                        case 4:
+                        default:
+                            return arenaService.runParallelSortingShowdown(scale);
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        BenchmarkArenaService.ShowdownCategory cat = get();
+                        chartPanel.displayCategory(cat);
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("================================================================================\n");
+                        sb.append("                 EDUTRACK ALGORITHM BENCHMARK ARENA TELEMETRY\n");
+                        sb.append("================================================================================\n");
+                        sb.append("Tournament Category: ").append(cat.title).append("\n");
+                        sb.append("Workload           : ").append(cat.inputDescription).append("\n\n");
+
+                        BenchmarkArenaService.ArenaResult winner = cat.results.size() > 0 ? cat.results.get(0) : null;
+                        for (int i = 0; i < cat.results.size(); i++) {
+                            BenchmarkArenaService.ArenaResult r = cat.results.get(i);
+                            if (winner == null || r.elapsedNanos < winner.elapsedNanos) {
+                                winner = r;
+                            }
+                            sb.append(String.format("  #%d [%-28s] %-18s | Time: %10.2f µs | Speedup: %5.1fx | %s\n",
+                                    (i + 1), r.algorithmName, r.complexity, r.elapsedMicros, r.speedup, r.notes));
+                        }
+                        if (winner != null) {
+                            sb.append("\n🏆 VICTORY: ").append(winner.algorithmName)
+                              .append(" achieved peak throughput (").append(String.format("%.2f µs", winner.elapsedMicros))
+                              .append(") with speedup of ").append(String.format("%.1fx", winner.speedup))
+                              .append(" over baseline!\n");
+                        }
+                        sb.append("================================================================================\n");
+                        telemetryArea.setText(sb.toString());
+
+                    } catch (Exception ex) {
+                        telemetryArea.setText("[!] Error during benchmark execution: " + ex.getMessage());
+                    } finally {
+                        btnRace.setEnabled(true);
+                        progressBar.setIndeterminate(false);
+                        progressBar.setVisible(false);
+                    }
+                }
+            };
+            worker.execute();
         });
 
         return panel;

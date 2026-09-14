@@ -10,8 +10,10 @@ Drop your captured screenshots in this directory with the following filenames:
 6. `fig06_gui_parallel.png`: GUI Tab 6 - Parallel Analytics Dashboard (Randomized QuickSort merit rank and Blelloch prefix scan)
 7. `fig07_gui_crypto.png`: GUI Tab 7 - Cryptographic Workbench (Miller-Rabin primality test for 1000000007 and composite witness)
 8. `fig08_gui_verification.png`: GUI Tab 8 - Automated System Verification (All 16 algorithm PASS badges and latencies)
-9. `fig09_cli_menu.png`: Terminal Console - Main Menu (Options 0 through 8)
+9. `fig09_cli_menu.png`: Terminal Console - Main Menu (Options 0 through 9)
 10. `fig10_cli_plagiarism.png`: Terminal Console - Plagiarism Analysis Option 2 execution log
+11. `fig11_gui_graph_canvas.png`: GUI Tab 4/5 - Interactive 2D Visual Graph Canvas (Dinic flow capacities & glowing 2-approx vertex cover proctor stations)
+12. `fig12_gui_benchmark_arena.png`: GUI Tab 9 - Algorithm Benchmark Arena (Head-to-head algorithm race bar charts with microsecond timers and speedup multipliers)
 
 ## How to Enable Images in LaTeX:
 In `latex/chapters/ch10_evaluation_screenshots.tex`, simply uncomment the line:

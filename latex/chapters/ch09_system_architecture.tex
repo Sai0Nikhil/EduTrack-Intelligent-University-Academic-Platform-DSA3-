@@ -246,22 +246,33 @@ The terminal interface provides an administrative console for server environment
     \item \textbf{Option 4 (Resource Allocation):} Solves Bipartite Matching for faculty and Dinic's Flow for lab seat allocation.
     \item \textbf{Option 5 (Exam Timetabling):} Solves timetable conflict 3-SAT with DPLL and computes 2-approx proctor placement.
     \item \textbf{Option 6 (Parallel Analytics):} Executes Randomized QuickSort, Reservoir Sampling, and Blelloch Parallel Scan.
-    \item \textbf{Option 7 (Crypto \& Security):} Tests 64-bit prime candidates using Miller-Rabin.
-    \item \textbf{Option 8 (Comprehensive Verification Suite):} Executes the complete automated test harness validating all 16 algorithmic modules against regression assertions.
+    \item \textbf{Option 7 (Verification Suite):} Executes the complete automated test harness validating all 16 algorithmic modules against regression assertions.
+    \item \textbf{Option 8 (Algorithm Benchmark Arena):} Runs head-to-head algorithmic tournament showdowns with ASCII performance bars and speedup metrics.
+    \item \textbf{Option 9 (Launch Desktop GUI):} Launches the graphical Swing application in a background process.
     \item \textbf{Option 0 (Exit):} Cleanly terminates system processes.
 \end{itemize}
 
 \subsection{Swing Desktop Graphical Interface (\texttt{EduTrackGUI.java})}
-The graphical application provides a modern desktop interface built with Java Swing. Configured with a clean, high-contrast palette (Primary Blue \texttt{\#2563EB}, Dark Slate \texttt{\#0F172A}, Emerald Green \texttt{\#10B981}, and Off-White \texttt{\#F8FAFC}), the interface organizes functionality into 8 tabbed panels:
+The graphical application provides a modern desktop interface built with Java Swing. Configured with a clean, high-contrast palette (Primary Blue \texttt{\#2563EB}, Dark Slate \texttt{\#0F172A}, Emerald Green \texttt{\#10B981}, and Off-White \texttt{\#F8FAFC}), the interface organizes functionality into 9 tabbed panels:
 \begin{enumerate}
     \item \textbf{Tab 1: Academic Search Engine:} Interactive text inputs for course corpus queries with algorithmic selector (KMP, Z, Rabin-Karp, Aho-Corasick) and formatted match tables.
     \item \textbf{Tab 2: Plagiarism Detection Center:} Multi-document comparison matrix displaying Levenshtein distance, similarity percentage, and extracted verbatim text excerpts.
     \item \textbf{Tab 3: Suffix Structure Indexer:} Visual display of suffix arrays, LCP arrays, and DAWG state statistics for indexed academic texts.
-    \item \textbf{Tab 4: Resource Allocation (Network Flow):} Visual graph representation of flow networks, source/sink capacities, Dinic's layer levels, and minimum cut allocations.
-    \item \textbf{Tab 5: Exam Timetabling (NP-Completeness):} Conflict graph inputs, DPLL SAT assignment viewer, and 2-approximation proctor cover metrics.
+    \item \textbf{Tab 4: Resource Allocation (Network Flow \& 2D Visualizer):} Embedded vector canvas rendering Source $S$, Faculty, Course, and Sink $T$ nodes with directed capacity/flow labels (`f/c`) and saturated edge highlights.
+    \item \textbf{Tab 5: Exam Timetabling (NP-Completeness \& Graph Canvas):} 2D radial conflict graph visualizer with glowing gold proctor stations (\textbf{★}) verifying 2-approximation vertex covers.
     \item \textbf{Tab 6: Parallel Analytics \& Sorting:} Real-time merit ranking visualizer, Blelloch scan input/output comparison, and parallel reduction timing.
     \item \textbf{Tab 7: Cryptographic Security:} Key generation workbench with Miller-Rabin composite witness inspector and prime status indicators.
-    \item \textbf{Tab 8: System Verification \& Benchmarks:} One-click execution of the 16-algorithm test harness with live status badges (\texttt{[PASS]}), assertion outputs, and microsecond latencies.
+    \item \textbf{Tab 8: System Verification Suite:} One-click execution of the 16-algorithm test harness with live status badges (\texttt{[PASS]}), assertion outputs, and microsecond latencies.
+    \item \textbf{Tab 9: Algorithm Benchmark Arena:} Interactive tournament ring featuring 5 showdown matchups (String Search, Network Flow, Suffix Indexing, DP Recurrences, Parallel/Sorting) with dynamic horizontal comparison bar charts and relative speedup badges (`⚡ 4.7x FASTER`).
 \end{enumerate}
 
-To ensure complete interface responsiveness, all algorithmic workloads are dispatched asynchronously using background execution threads, preventing UI freeze during heavy parallel scans or flow computations.
+\subsection{Interactive 2D Visual Graph Engine (\texttt{GraphVisualizerPanel.java})}
+To bridge abstract graph theory with intuitive visual verification, EduTrack features a handcrafted vector rendering engine built with Java \texttt{Graphics2D} (requiring zero third-party dependencies). It supports:
+\begin{itemize}
+    \item \textbf{Dynamic Flow Rendering:} Renders bipartite faculty assignments and Dinic layered networks. Directed edges display $(f / c)$ capacity indicators. Edges with active flow glow emerald green, while saturated bottleneck edges are highlighted in amber.
+    \item \textbf{Vertex Cover Invariant Verification:} In exam conflict mode, all conflicting course pairs are linked by edges. Nodes selected by the 2-approximation algorithm receive glowing gold halo rings and a \texttt{"PROCTOR"} badge, visually demonstrating that every single conflict edge touches at least one covered vertex.
+    \item \textbf{Interactive Geometry:} Supports mouse-hover incident edge highlighting, tooltips, and real-time layout recalculation.
+\end{itemize}
+
+\subsection{Benchmark Bar Chart Component (\texttt{BenchmarkBarChartPanel.java})}
+A custom component that paints publication-quality horizontal comparative performance charts. It renders normalized execution bars, gradient fills, microsecond latency tags, complexity annotations, and automated speedup factor pills without relying on external charting libraries.

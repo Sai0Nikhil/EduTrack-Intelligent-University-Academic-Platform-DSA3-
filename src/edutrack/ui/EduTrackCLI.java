@@ -37,6 +37,7 @@ import edutrack.model.Faculty;
 import edutrack.model.Student;
 import edutrack.service.AcademicSearchService;
 import edutrack.service.AnalyticsService;
+import edutrack.service.BenchmarkArenaService;
 import edutrack.service.ExamSchedulingService;
 import edutrack.service.PlagiarismDetectionService;
 import edutrack.service.ResourceAllocationService;
@@ -61,6 +62,7 @@ public class EduTrackCLI {
     private final ResourceAllocationService allocationService;
     private final ExamSchedulingService examService;
     private final AnalyticsService analyticsService;
+    private final BenchmarkArenaService arenaService;
 
     private final Scanner scanner;
 
@@ -80,6 +82,7 @@ public class EduTrackCLI {
         this.allocationService = new ResourceAllocationService(faculty, courses);
         this.examService = new ExamSchedulingService(courses);
         this.analyticsService = new AnalyticsService(students, courses);
+        this.arenaService = new BenchmarkArenaService();
 
         System.out.println(String.format("[EduTrack] Loaded: %d courses, %d students, %d faculty, %d submissions, %d activity logs.",
                 courses.size(), students.size(), faculty.size(), submissions.size(), activityLogs.size()));
@@ -87,7 +90,11 @@ public class EduTrackCLI {
 
     private String readLineSafe() {
         if (scanner.hasNextLine()) {
-            return scanner.nextLine().trim();
+            String s = scanner.nextLine().trim();
+            if (s.startsWith("\uFEFF")) {
+                s = s.substring(1).trim();
+            }
+            return s;
         }
         return "";
     }
@@ -95,11 +102,14 @@ public class EduTrackCLI {
     public void run() {
         while (true) {
             printMainMenu();
-            System.out.print("Enter your choice (0-7): ");
+            System.out.print("Enter your choice (0-9): ");
             String choice = readLineSafe();
-            if (choice.isEmpty() && !scanner.hasNextLine()) {
-                System.out.println("\n[EduTrack] End of input. Exiting.");
-                break;
+            if (choice.isEmpty()) {
+                if (!scanner.hasNextLine()) {
+                    System.out.println("\n[EduTrack] End of input. Exiting.");
+                    break;
+                }
+                continue;
             }
 
             switch (choice) {
@@ -125,6 +135,9 @@ public class EduTrackCLI {
                     runBenchmarkSuite();
                     break;
                 case "8":
+                    handleBenchmarkArenaMenu();
+                    break;
+                case "9":
                     System.out.println("\n[EduTrack] Launching Graphical User Interface (GUI)...");
                     new Thread(() -> EduTrackGUI.main(new String[0])).start();
                     System.out.println("[EduTrack] GUI launched in background window.");
@@ -133,7 +146,7 @@ public class EduTrackCLI {
                     System.out.println("\n[EduTrack] Exiting platform. Goodbye!");
                     return;
                 default:
-                    System.out.println("[!] Invalid choice. Please enter a number between 0 and 8.");
+                    System.out.println("[!] Invalid choice. Please enter a number between 0 and 9.");
             }
             System.out.println("\nPress ENTER to continue...");
             if (scanner.hasNextLine()) {
@@ -156,9 +169,76 @@ public class EduTrackCLI {
         System.out.println("  [5] NP-Completeness, Reductions & Approximation (SAT, 3-SAT->Clique->IS->VC, 2-Approx)");
         System.out.println("  [6] Randomized & Parallel Algorithms (QuickSort, Reservoir, Miller-Rabin, Scan, Brent)");
         System.out.println("  [7] Run Full Integrated Verification & Benchmark Suite");
-        System.out.println("  [8] Launch EduTrack Graphical User Interface (GUI)");
+        System.out.println("  [8] Interactive Algorithm Showdown / Benchmark Arena (Head-to-Head Races)");
+        System.out.println("  [9] Launch EduTrack Graphical User Interface (GUI)");
         System.out.println("  [0] Exit EduTrack");
         System.out.println("================================================================================");
+    }
+
+    private void handleBenchmarkArenaMenu() {
+        System.out.println("\n================================================================================");
+        System.out.println("                 EDUTRACK ALGORITHM BENCHMARK ARENA (SHOWDOWN)");
+        System.out.println("================================================================================");
+        System.out.println("  1. String Matching Showdown (KMP vs Z-Algo vs Rabin-Karp vs Naive)");
+        System.out.println("  2. Network Flow Showdown (Dinic vs Edmonds-Karp vs Ford-Fulkerson)");
+        System.out.println("  3. Suffix Indexing Showdown (Linear SA-IS vs Suffix Array vs DAWG)");
+        System.out.println("  4. Dynamic Programming Showdown (Levenshtein vs Damerau vs MCM)");
+        System.out.println("  5. Parallel & Sorting Showdown (Blelloch Scan vs QuickSort vs Reduce)");
+        System.out.println("  6. Run ALL Showdowns Consecutively");
+        System.out.println("  0. Return to Main Menu");
+        System.out.print("Select showdown (0-6): ");
+        String choice = readLineSafe();
+
+        switch (choice) {
+            case "1":
+                printShowdownResult(arenaService.runStringSearchShowdown(50000));
+                break;
+            case "2":
+                printShowdownResult(arenaService.runNetworkFlowShowdown(40));
+                break;
+            case "3":
+                printShowdownResult(arenaService.runSuffixIndexingShowdown(20000));
+                break;
+            case "4":
+                printShowdownResult(arenaService.runDynamicProgrammingShowdown(600));
+                break;
+            case "5":
+                printShowdownResult(arenaService.runParallelSortingShowdown(50000));
+                break;
+            case "6":
+                printShowdownResult(arenaService.runStringSearchShowdown(50000));
+                printShowdownResult(arenaService.runNetworkFlowShowdown(40));
+                printShowdownResult(arenaService.runSuffixIndexingShowdown(20000));
+                printShowdownResult(arenaService.runDynamicProgrammingShowdown(600));
+                printShowdownResult(arenaService.runParallelSortingShowdown(50000));
+                break;
+            default:
+                System.out.println("Returning to main menu.");
+        }
+    }
+
+    private void printShowdownResult(BenchmarkArenaService.ShowdownCategory cat) {
+        System.out.println("\n--------------------------------------------------------------------------------");
+        System.out.println("TOURNAMENT: " + cat.title);
+        System.out.println("WORKLOAD  : " + cat.inputDescription);
+        System.out.println("--------------------------------------------------------------------------------");
+        BenchmarkArenaService.ArenaResult winner = cat.results.size() > 0 ? cat.results.get(0) : null;
+        for (int i = 0; i < cat.results.size(); i++) {
+            BenchmarkArenaService.ArenaResult r = cat.results.get(i);
+            if (winner == null || r.elapsedNanos < winner.elapsedNanos) {
+                winner = r;
+            }
+            int barLen = (int) Math.max(1, Math.min(35, r.speedup * 4));
+            StringBuilder bar = new StringBuilder();
+            for (int b = 0; b < barLen; b++) bar.append("=");
+            System.out.println(String.format("  #%d [%-27s] %-18s | %10.2f µs | %5.1fx | %s",
+                    (i + 1), r.algorithmName, r.complexity, r.elapsedMicros, r.speedup, bar.toString()));
+        }
+        if (winner != null) {
+            System.out.println(String.format("\n🏆 WINNER: %s (%.2f µs, %.1fx speedup)",
+                    winner.algorithmName, winner.elapsedMicros, winner.speedup));
+        }
+        System.out.println("--------------------------------------------------------------------------------");
     }
 
     private void handleStringAlgorithmsMenu() {
