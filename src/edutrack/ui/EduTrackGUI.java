@@ -49,6 +49,8 @@ import java.awt.*;
  */
 public class EduTrackGUI extends JFrame {
 
+    public static boolean REVIEW_1_MODE = true;
+
     private final String baseDir;
     private final MyArrayList<Course> courses;
     private final MyArrayList<Student> students;
@@ -69,9 +71,14 @@ public class EduTrackGUI extends JFrame {
     private static final Color BG_CARD = new Color(32, 38, 50);
     private static final Color TEXT_MAIN = new Color(240, 244, 248);
     private static final Color TEXT_MUTED = new Color(156, 163, 175);
-    private static final Color ACCENT_BLUE = new Color(59, 130, 246);
+    private static final Color ACCENT_BLUE = new ScalableColor(59, 130, 246);
     private static final Color ACCENT_GREEN = new Color(16, 185, 129);
     private static final Color ACCENT_AMBER = new Color(245, 158, 11);
+
+    // Color alias for safety
+    private static class ScalableColor extends Color {
+        public ScalableColor(int r, int g, int b) { super(r, g, b); }
+    }
 
     public EduTrackGUI(String baseDir) {
         super("EduTrack – Intelligent University Academic Platform [DSA-3 Engine]");
@@ -116,9 +123,47 @@ public class EduTrackGUI extends JFrame {
         tabbedPane.addTab("  M1: String Search  ", createStringSearchTab());
         tabbedPane.addTab("  M2: Suffix & Plagiarism  ", createSuffixPlagiarismTab());
         tabbedPane.addTab("  M3: Advanced DP  ", createDynamicProgrammingTab());
-        tabbedPane.addTab("  M4: Network Flow  ", createNetworkFlowTab());
-        tabbedPane.addTab("  M5: NP-Reductions  ", createNPCompletenessTab());
-        tabbedPane.addTab("  M6: Parallel & Random  ", createParallelRandomTab());
+
+        // CO4, CO5, CO6 are elegantly gated behind Review 2 / Review 3 milestones
+        tabbedPane.addTab("  M4: Network Flow [Review 2]  ", createReviewGatedTab(
+                "CO4 / Module 4",
+                "Network Flow & Resource Allocation",
+                "Review 2 Milestone",
+                new String[]{
+                        "Dinic's Blocking Flow Algorithm O(V² E) with BFS Level Graphs",
+                        "Edmonds-Karp Shortest Augmenting Path Algorithm O(V E²)",
+                        "Maximum Bipartite Matching for Faculty-to-Course Assignment",
+                        "König's Min-Max Theorem for Minimum Vertex Cover Bottlenecks",
+                        "Interactive 2D Vector Flow Network Canvas Visualization"
+                },
+                createNetworkFlowTab()));
+
+        tabbedPane.addTab("  M5: NP-Reductions [Review 2]  ", createReviewGatedTab(
+                "CO5 / Module 5",
+                "NP-Completeness, Reductions & Approximation",
+                "Review 2 Milestone",
+                new String[]{
+                        "DPLL Boolean Satisfiability (SAT) Solver with Unit Propagation",
+                        "Karp Reductions Chain: 3-SAT → CLIQUE → Independent Set → Vertex Cover",
+                        "2-Approximation Algorithm for Minimum Vertex Cover (Maximal Matching)",
+                        "Interactive Exam Conflict Graph & Proctor Allocation Canvas"
+                },
+                createNPCompletenessTab()));
+
+        tabbedPane.addTab("  M6: Parallel & Random [Review 3]  ", createReviewGatedTab(
+                "CO6 / Module 6",
+                "Randomized & Parallel Algorithms",
+                "Review 3 Milestone (Final Review)",
+                new String[]{
+                        "Randomized QuickSort with Uniform Random Pivot Selection",
+                        "Reservoir Sampling (Algorithm R) for Infinite Activity Streams",
+                        "Miller-Rabin Probabilistic Primality Test for Student Cryptographic Tokens",
+                        "Blelloch Work-Efficient Parallel Prefix Scan (Up-sweep & Down-sweep)",
+                        "Multi-threaded Parallel Tree Reduction on Academic Records",
+                        "Brent's Work-Time Scheduling Principle & Theoretical Speedup Analyzer"
+                },
+                createParallelRandomTab()));
+
         tabbedPane.addTab("  Verification Suite  ", createBenchmarkTab());
         tabbedPane.addTab("  🏆 Benchmark Arena  ", createBenchmarkArenaTab());
 
@@ -144,7 +189,17 @@ public class EduTrackGUI extends JFrame {
         textPanel.add(titleLabel);
         textPanel.add(subtitleLabel);
 
-        // Status badge
+        // Status badges
+        JPanel badgeContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        badgeContainer.setOpaque(false);
+
+        JLabel revBadge = new JLabel(REVIEW_1_MODE ? "  REVIEW 1: CO1–CO3 ACTIVE  " : "  FULL PRODUCTION ENGINE  ");
+        revBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        revBadge.setForeground(Color.WHITE);
+        revBadge.setBackground(new Color(59, 130, 246));
+        revBadge.setOpaque(true);
+        revBadge.setBorder(new EmptyBorder(6, 12, 6, 12));
+
         JLabel badge = new JLabel("  ENGINE: ZERO-JAVA.UTIL COMPLIANT  ");
         badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
         badge.setForeground(Color.WHITE);
@@ -152,9 +207,195 @@ public class EduTrackGUI extends JFrame {
         badge.setOpaque(true);
         badge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
+        badgeContainer.add(revBadge);
+        badgeContainer.add(badge);
+
         panel.add(textPanel, BorderLayout.WEST);
-        panel.add(badge, BorderLayout.EAST);
+        panel.add(badgeContainer, BorderLayout.EAST);
         return panel;
+    }
+
+    // =========================================================================
+    // REVIEW MILESTONE GATING: CO4, CO5, CO6 COMING SOON WRAPPER
+    // =========================================================================
+    private JPanel createReviewGatedTab(String coCode, String moduleTitle, String milestoneText,
+                                        String[] roadmapItems, JPanel realPanel) {
+        CardLayout cardLayout = new CardLayout();
+        JPanel container = new JPanel(cardLayout);
+
+        // --- Card 1: Gated / Coming Soon Screen ---
+        JPanel gatedCard = new JPanel(new BorderLayout());
+        gatedCard.setBackground(BG_DARK);
+
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setBackground(BG_DARK);
+
+        JPanel contentCard = new JPanel();
+        contentCard.setLayout(new BoxLayout(contentCard, BoxLayout.Y_AXIS));
+        contentCard.setBackground(BG_CARD);
+        contentCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(51, 65, 85), 1),
+                new EmptyBorder(32, 40, 32, 40)
+        ));
+        contentCard.setMaximumSize(new Dimension(860, 620));
+        contentCard.setPreferredSize(new Dimension(830, 560));
+
+        // Badges row
+        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        badgeRow.setOpaque(false);
+        badgeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel statusBadge = new JLabel("  ⏳ COMING SOON  ");
+        statusBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        statusBadge.setForeground(Color.WHITE);
+        statusBadge.setBackground(ACCENT_AMBER);
+        statusBadge.setOpaque(true);
+        statusBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
+
+        JLabel milestoneBadge = new JLabel("  MILESTONE: " + milestoneText.toUpperCase() + "  ");
+        milestoneBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        milestoneBadge.setForeground(Color.WHITE);
+        milestoneBadge.setBackground(new Color(99, 102, 241));
+        milestoneBadge.setOpaque(true);
+        milestoneBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
+
+        badgeRow.add(statusBadge);
+        badgeRow.add(milestoneBadge);
+
+        contentCard.add(badgeRow);
+        contentCard.add(Box.createRigidArea(new Dimension(0, 16)));
+
+        // Title & Subtitle
+        JLabel titleLabel = new JLabel(moduleTitle);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(TEXT_MAIN);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentCard.add(titleLabel);
+
+        JLabel subtitleLabel = new JLabel("EduTrack Course Outcome Specification • " + coCode);
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(TEXT_MUTED);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentCard.add(subtitleLabel);
+
+        contentCard.add(Box.createRigidArea(new Dimension(0, 16)));
+
+        // Review 1 Scope explanation notice box
+        JPanel noticeBox = new JPanel(new BorderLayout(8, 8));
+        noticeBox.setBackground(new Color(15, 23, 42));
+        noticeBox.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 4, 0, 0, new Color(59, 130, 246)),
+                new EmptyBorder(12, 16, 12, 16)
+        ));
+        noticeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel noticeTitle = new JLabel("📘 Review 1 Project Scope & Evaluation Boundary:");
+        noticeTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        noticeTitle.setForeground(new Color(59, 130, 246));
+
+        JLabel noticeText = new JLabel("<html>This platform is structured into iterative engineering milestones. " +
+                "<b>Review 1</b> focuses strictly on foundational data structures and core algorithms: " +
+                "<b>CO1 (String Search & Automata)</b>, <b>CO2 (Suffix Structures & Plagiarism)</b>, and <b>CO3 (Dynamic Programming & Optimization)</b>.<br/>" +
+                "Advanced network flow, NP-reductions, and parallel architectures are scheduled for progressive rollout in " + milestoneText + ".</html>");
+        noticeText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        noticeText.setForeground(new Color(203, 213, 225));
+
+        noticeBox.add(noticeTitle, BorderLayout.NORTH);
+        noticeBox.add(noticeText, BorderLayout.CENTER);
+        contentCard.add(noticeBox);
+
+        contentCard.add(Box.createRigidArea(new Dimension(0, 18)));
+
+        // Roadmap Deliverables
+        JLabel roadmapTitle = new JLabel("Planned Deliverables & Specifications for " + milestoneText + ":");
+        roadmapTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        roadmapTitle.setForeground(TEXT_MAIN);
+        roadmapTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentCard.add(roadmapTitle);
+
+        contentCard.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        for (String item : roadmapItems) {
+            JPanel itemRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
+            itemRow.setOpaque(false);
+            itemRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JLabel tag = new JLabel("[PENDING REVIEW]");
+            tag.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            tag.setForeground(new Color(251, 191, 36));
+
+            JLabel label = new JLabel(item);
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            label.setForeground(new Color(226, 232, 240));
+
+            itemRow.add(tag);
+            itemRow.add(label);
+            contentCard.add(itemRow);
+        }
+
+        contentCard.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Bottom Unlock / Preview Bar
+        JPanel previewBar = new JPanel(new BorderLayout());
+        previewBar.setOpaque(false);
+        previewBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel hintLbl = new JLabel("<html><span style='color:#94a3b8; font-size:11px;'>Early-Access Demonstration:</span></html>");
+        JButton btnPreview = new JButton("⚡ Preview Pre-built Draft Engine (Demo Mode)");
+        btnPreview.setBackground(new Color(30, 41, 59));
+        btnPreview.setForeground(new Color(251, 191, 36));
+        btnPreview.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnPreview.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPreview.setFocusPainted(false);
+        btnPreview.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(245, 158, 11), 1),
+                new EmptyBorder(8, 16, 8, 16)
+        ));
+
+        btnPreview.addActionListener(e -> cardLayout.show(container, "UNLOCKED"));
+
+        previewBar.add(hintLbl, BorderLayout.WEST);
+        previewBar.add(btnPreview, BorderLayout.EAST);
+        contentCard.add(previewBar);
+
+        centerWrapper.add(contentCard);
+        gatedCard.add(centerWrapper, BorderLayout.CENTER);
+
+        // --- Card 2: Unlocked Real Module Panel with Demo Banner ---
+        JPanel unlockedCard = new JPanel(new BorderLayout());
+
+        JPanel bannerPanel = new JPanel(new BorderLayout(10, 0));
+        bannerPanel.setBackground(new Color(15, 23, 42));
+        bannerPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(245, 158, 11)),
+                new EmptyBorder(8, 20, 8, 20)
+        ));
+
+        JLabel unlockTitle = new JLabel("⚡ PREVIEW ACTIVE: Pre-built " + coCode + " Engine (Scheduled for " + milestoneText + ")");
+        unlockTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        unlockTitle.setForeground(new Color(251, 191, 36));
+
+        JButton btnLock = new JButton("🔒 Re-lock for Review 1");
+        btnLock.setBackground(new Color(51, 65, 85));
+        btnLock.setForeground(Color.WHITE);
+        btnLock.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btnLock.setFocusPainted(false);
+        btnLock.addActionListener(e -> cardLayout.show(container, "GATED"));
+
+        bannerPanel.add(unlockTitle, BorderLayout.WEST);
+        bannerPanel.add(btnLock, BorderLayout.EAST);
+
+        unlockedCard.add(bannerPanel, BorderLayout.NORTH);
+        unlockedCard.add(realPanel, BorderLayout.CENTER);
+
+        // Add both cards
+        container.add(gatedCard, "GATED");
+        container.add(unlockedCard, "UNLOCKED");
+
+        // Set initial view according to REVIEW_1_MODE
+        cardLayout.show(container, REVIEW_1_MODE ? "GATED" : "UNLOCKED");
+
+        return container;
     }
 
     // =========================================================================
@@ -169,12 +410,16 @@ public class EduTrackGUI extends JFrame {
         JPanel metricsGrid = new JPanel(new GridLayout(2, 3, 15, 15));
         metricsGrid.setOpaque(false);
 
-        metricsGrid.add(createMetricCard("Total Courses", String.valueOf(courses.size()), "CS, AI, Math, Data Science, Cyber", ACCENT_BLUE));
+        metricsGrid.add(createMetricCard("Total Courses", String.valueOf(courses.size()), "CS, AI, Math, Data Science, Cyber", new Color(59, 130, 246)));
         metricsGrid.add(createMetricCard("Enrolled Students", String.valueOf(students.size()), "CGPA, Credits & Attendance records", ACCENT_GREEN));
         metricsGrid.add(createMetricCard("Faculty Members", String.valueOf(faculty.size()), "Course qualifications & workloads", new Color(139, 92, 246)));
         metricsGrid.add(createMetricCard("Assignment Submissions", String.valueOf(submissions.size()), "Multi-document plagiarism test set", ACCENT_AMBER));
         metricsGrid.add(createMetricCard("Activity Stream Events", String.valueOf(activityLogs.size()), "Continuous streaming audit logs", new Color(236, 72, 153)));
-        metricsGrid.add(createMetricCard("DSA Algorithms Active", "16 / 16", "M1 to M6 fully verified", new Color(14, 165, 233)));
+        metricsGrid.add(createMetricCard(
+                REVIEW_1_MODE ? "Review 1 Scope" : "DSA Algorithms Active",
+                REVIEW_1_MODE ? "10 Active (CO1–CO3)" : "16 / 16 (Full Engine)",
+                REVIEW_1_MODE ? "CO4–CO6 pre-built in Review 2/3 roadmap" : "M1 to M6 fully verified",
+                new Color(14, 165, 233)));
 
         panel.add(metricsGrid, BorderLayout.NORTH);
 
@@ -791,14 +1036,20 @@ public class EduTrackGUI extends JFrame {
         panel.setBackground(BG_DARK);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
 
-        JButton btnRunAll = new JButton("Run Full 16-Algorithm Verification Suite");
-        btnRunAll.setBackground(ACCENT_GREEN);
+        JButton btnRunReview1 = new JButton("Run Review 1 Verification (CO1 – CO3: 10 Algos)");
+        btnRunReview1.setBackground(ACCENT_GREEN);
+        btnRunReview1.setForeground(Color.WHITE);
+        btnRunReview1.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        JButton btnRunAll = new JButton("Run Full 16-Algorithm Suite (All Modules)");
+        btnRunAll.setBackground(new Color(59, 130, 246));
         btnRunAll.setForeground(Color.WHITE);
         btnRunAll.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
+        topControls.add(btnRunReview1);
         topControls.add(btnRunAll);
         panel.add(topControls, BorderLayout.NORTH);
 
@@ -809,9 +1060,14 @@ public class EduTrackGUI extends JFrame {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
+        btnRunReview1.addActionListener(e -> {
+            model.setRowCount(0);
+            runGuiBenchmarks(model, true);
+        });
+
         btnRunAll.addActionListener(e -> {
             model.setRowCount(0);
-            runGuiBenchmarks(model);
+            runGuiBenchmarks(model, false);
         });
 
         return panel;
@@ -957,16 +1213,20 @@ public class EduTrackGUI extends JFrame {
     }
 
     private void runGuiBenchmarks(DefaultTableModel model) {
-        addBenchmarkRow(model, 1, "KMP Pattern Search", "Module 1", "Prefix failure table pi and text occurrences",
+        runGuiBenchmarks(model, false);
+    }
+
+    private void runGuiBenchmarks(DefaultTableModel model, boolean review1Only) {
+        addBenchmarkRow(model, 1, "KMP Pattern Search", "Module 1 (CO1)", "Prefix failure table pi and text occurrences",
                 () -> KmpMatcher.search("algorithms and algorithmic analysis", "algorithm", true).size() == 2);
 
-        addBenchmarkRow(model, 2, "Z-Algorithm", "Module 1", "Linear-time Z-box interval phrase detection",
+        addBenchmarkRow(model, 2, "Z-Algorithm", "Module 1 (CO1)", "Linear-time Z-box interval phrase detection",
                 () -> ZAlgorithm.computeZ("aabzaa")[0] == 6);
 
-        addBenchmarkRow(model, 3, "Rabin-Karp Rolling Hash", "Module 1", "Double-modulus rolling window matching",
+        addBenchmarkRow(model, 3, "Rabin-Karp Rolling Hash", "Module 1 (CO1)", "Double-modulus rolling window matching",
                 () -> RabinKarp.search("UNIVERSITY_CS201_EXAM_CS201", "CS201").size() == 2);
 
-        addBenchmarkRow(model, 4, "Aho-Corasick Automaton", "Module 1", "Trie suffix & dictionary failure links",
+        addBenchmarkRow(model, 4, "Aho-Corasick Automaton", "Module 1 (CO1)", "Trie suffix & dictionary failure links",
                 () -> {
                     AhoCorasick ac = new AhoCorasick();
                     ac.addPattern("he"); ac.addPattern("she"); ac.addPattern("his");
@@ -974,25 +1234,29 @@ public class EduTrackGUI extends JFrame {
                     return ac.search("ushers").size() == 2;
                 });
 
-        addBenchmarkRow(model, 5, "Suffix Array O(N log^2 N)", "Module 2", "Sorted suffix array & binary substring lookup",
+        addBenchmarkRow(model, 5, "Suffix Array O(N log^2 N)", "Module 2 (CO2)", "Sorted suffix array & binary substring lookup",
                 () -> new SuffixArray("banana").searchPattern("nan") >= 0);
 
-        addBenchmarkRow(model, 6, "Kasai's LCP Array", "Module 2", "O(N) Longest Common Prefix calculation",
+        addBenchmarkRow(model, 6, "Kasai's LCP Array", "Module 2 (CO2)", "O(N) Longest Common Prefix calculation",
                 () -> KasaiLCP.computeLCP("banana", new SuffixArray("banana").getSuffixArray()).length == 6);
 
-        addBenchmarkRow(model, 7, "Suffix Automaton", "Module 2", "Minimal state machine O(N) substring queries",
+        addBenchmarkRow(model, 7, "Suffix Automaton", "Module 2 (CO2)", "Minimal state machine O(N) substring queries",
                 () -> new SuffixAutomaton("algorithms").containsSubstring("rithm"));
 
-        addBenchmarkRow(model, 8, "Levenshtein Edit Distance", "Module 3", "Wagner-Fischer 2D dynamic programming table",
+        addBenchmarkRow(model, 8, "Levenshtein Edit Distance", "Module 3 (CO3)", "Wagner-Fischer 2D dynamic programming table",
                 () -> Levenshtein.computeDistance("kitten", "sitting") == 3);
 
-        addBenchmarkRow(model, 9, "Damerau-Levenshtein", "Module 3", "Adjacent transposition optimal alignment",
+        addBenchmarkRow(model, 9, "Damerau-Levenshtein", "Module 3 (CO3)", "Adjacent transposition optimal alignment",
                 () -> DamerauLevenshtein.computeDistance("CS102", "SC102") == 1);
 
-        addBenchmarkRow(model, 10, "Matrix-Chain Mult (MCM)", "Module 3", "O(N^3) optimal parenthesization order",
+        addBenchmarkRow(model, 10, "Matrix-Chain Mult (MCM)", "Module 3 (CO3)", "O(N^3) optimal parenthesization order",
                 () -> MatrixChainMult.solve(new int[]{10, 30, 5, 60}, null).minMultiplications == 4500);
 
-        addBenchmarkRow(model, 11, "Network Flow (Dinic)", "Module 4", "BFS level graph and blocking flow max-flow",
+        if (review1Only) {
+            return;
+        }
+
+        addBenchmarkRow(model, 11, "Network Flow (Dinic)", "Module 4 (CO4)", "BFS level graph and blocking flow max-flow",
                 () -> {
                     edutrack.algorithms.flow.FlowNetwork net = new edutrack.algorithms.flow.FlowNetwork(4);
                     net.addEdge(0, 1, 10); net.addEdge(0, 2, 5); net.addEdge(1, 2, 15);
@@ -1000,27 +1264,27 @@ public class EduTrackGUI extends JFrame {
                     return edutrack.algorithms.flow.DinicsAlgorithm.maxFlow(net, 0, 3) == 15;
                 });
 
-        addBenchmarkRow(model, 12, "DPLL SAT Solver", "Module 5", "Exam timetable constraint satisfaction in CNF",
+        addBenchmarkRow(model, 12, "DPLL SAT Solver", "Module 5 (CO5)", "Exam timetable constraint satisfaction in CNF",
                 () -> {
                     MyArrayList<DpllSatSolver.Clause> cl = new MyArrayList<>();
                     cl.add(new DpllSatSolver.Clause(1, 2)); cl.add(new DpllSatSolver.Clause(-1, 2));
                     return DpllSatSolver.solve(cl, 2).isSatisfiable;
                 });
 
-        addBenchmarkRow(model, 13, "Vertex Cover 2-Approx", "Module 5", "Maximal matching 2*OPT factor guarantee",
+        addBenchmarkRow(model, 13, "Vertex Cover 2-Approx", "Module 5 (CO5)", "Maximal matching 2*OPT factor guarantee",
                 () -> {
                     MyArrayList<Pair<Integer, Integer>> edges = new MyArrayList<>();
                     edges.add(new Pair<>(0, 1)); edges.add(new Pair<>(1, 2));
                     return VertexCover2Approx.approximateCover(3, edges).approxCoverSize <= 4;
                 });
 
-        addBenchmarkRow(model, 14, "Miller-Rabin Primality", "Module 6", "Deterministic & probabilistic prime witnesses",
+        addBenchmarkRow(model, 14, "Miller-Rabin Primality", "Module 6 (CO6)", "Deterministic & probabilistic prime witnesses",
                 () -> MillerRabin.isPrime(1000000007L) && !MillerRabin.isPrime(1000000005L));
 
-        addBenchmarkRow(model, 15, "Blelloch Parallel Scan", "Module 6", "Work-efficient prefix sum equality",
+        addBenchmarkRow(model, 15, "Blelloch Parallel Scan", "Module 6 (CO6)", "Work-efficient prefix sum equality",
                 () -> BlellochScan.inclusiveScan(new long[]{1, 2, 3, 4, 5, 6, 7, 8})[7] == 36);
 
-        addBenchmarkRow(model, 16, "Brent's Theorem Modeler", "Module 6", "Analytical speedup bounds T_P <= (T1-T_inf)/P + T_inf",
+        addBenchmarkRow(model, 16, "Brent's Theorem Modeler", "Module 6 (CO6)", "Analytical speedup bounds T_P <= (T1-T_inf)/P + T_inf",
                 () -> BrentsTheorem.analyze(1000, 10, 4).expectedSpeedup > 1.0);
     }
 
@@ -1062,7 +1326,7 @@ public class EduTrackGUI extends JFrame {
             DefaultTableModel model = new DefaultTableModel();
             gui.runGuiBenchmarks(model);
             System.out.println("[EduTrackGUI] Headless test verified " + model.getRowCount() + " algorithms successfully.");
-            return;
+            System.exit(0);
         }
 
         SwingUtilities.invokeLater(() -> {
