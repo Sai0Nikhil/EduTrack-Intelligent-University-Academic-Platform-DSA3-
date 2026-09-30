@@ -1825,14 +1825,14 @@ public class EduTrackGUI extends JFrame {
                 new EmptyBorder(4, 10, 4, 10)
         ));
 
-        ModernButton btnRunReview1 = new ModernButton("Run Review 1 Verification (CO1 – CO3: 10 Algos)", ACCENT_GREEN, TEXT_DARK);
-        ModernButton btnRunAll = new ModernButton("Run Full 16-Algorithm Suite (All Modules)", ACCENT_SKIN, TEXT_DARK);
+        ModernButton btnRunReview1 = new ModernButton("Run Review 1 Verification (CO1 – CO3: 11 Algos)", ACCENT_GREEN, TEXT_DARK);
+        ModernButton btnRunAll = new ModernButton("Run Full 17-Algorithm Suite (All Modules)", ACCENT_SKIN, TEXT_DARK);
 
         topControls.add(btnRunReview1);
         topControls.add(btnRunAll);
         panel.add(topControls, BorderLayout.NORTH);
 
-        String[] cols = {"#", "Algorithm Family", "Syllabus Module", "Test Case Description", "Status", "Latency"};
+        String[] cols = {"#", "Algorithm Family", "Syllabus Module", "Time Complexity", "Space Complexity", "Status", "Exec Time"};
         DefaultTableModel model = new DefaultTableModel(cols, 0);
         JTable table = new JTable(model);
         styleTable(table);
@@ -1997,16 +1997,16 @@ public class EduTrackGUI extends JFrame {
     }
 
     private void runGuiBenchmarks(DefaultTableModel model, boolean review1Only) {
-        addBenchmarkRow(model, 1, "KMP Pattern Search", "Module 1 (CO1)", "Prefix failure table pi and text occurrences",
+        addBenchmarkRow(model, 1, "KMP Pattern Search", "Module 1 (CO1)", "O(N + M)", "O(M)",
                 () -> KmpMatcher.search("algorithms and algorithmic analysis", "algorithm", true).size() == 2);
 
-        addBenchmarkRow(model, 2, "Z-Algorithm", "Module 1 (CO1)", "Linear-time Z-box interval phrase detection",
+        addBenchmarkRow(model, 2, "Z-Algorithm", "Module 1 (CO1)", "O(N + M)", "O(N + M)",
                 () -> ZAlgorithm.computeZ("aabzaa")[0] == 6);
 
-        addBenchmarkRow(model, 3, "Rabin-Karp Rolling Hash", "Module 1 (CO1)", "Double-modulus rolling window matching",
+        addBenchmarkRow(model, 3, "Rabin-Karp Rolling Hash", "Module 1 (CO1)", "O(N + M) avg", "O(1)",
                 () -> RabinKarp.search("UNIVERSITY_CS201_EXAM_CS201", "CS201").size() == 2);
 
-        addBenchmarkRow(model, 4, "Aho-Corasick Automaton", "Module 1 (CO1)", "Trie suffix & dictionary failure links",
+        addBenchmarkRow(model, 4, "Aho-Corasick Automaton", "Module 1 (CO1)", "O(N + ∑M + Z)", "O(∑M · Σ)",
                 () -> {
                     AhoCorasick ac = new AhoCorasick();
                     ac.addPattern("he"); ac.addPattern("she"); ac.addPattern("his");
@@ -2014,32 +2014,32 @@ public class EduTrackGUI extends JFrame {
                     return ac.search("ushers").size() == 2;
                 });
 
-        addBenchmarkRow(model, 5, "✨ Bittu's Algorithm", "Invention (CO1)", "Rolling bigram vector space cosine angle filter",
+        addBenchmarkRow(model, 5, "✨ Bittu's Algorithm", "Invention (CO1)", "O(N + M) avg", "O(Σ² = 65K)",
                 () -> BittuAlgorithm.search("algorithms and algorithmic analysis", "algorithm").size() == 2);
 
-        addBenchmarkRow(model, 6, "Suffix Array O(N log^2 N)", "Module 2 (CO2)", "Sorted suffix array & binary substring lookup",
+        addBenchmarkRow(model, 6, "Suffix Array (Prefix Doubling)", "Module 2 (CO2)", "O(N log² N)", "O(N)",
                 () -> new SuffixArray("banana").searchPattern("nan") >= 0);
 
-        addBenchmarkRow(model, 7, "Kasai's LCP Array", "Module 2 (CO2)", "O(N) Longest Common Prefix calculation",
+        addBenchmarkRow(model, 7, "Kasai's LCP Array", "Module 2 (CO2)", "O(N)", "O(N)",
                 () -> KasaiLCP.computeLCP("banana", new SuffixArray("banana").getSuffixArray()).length == 6);
 
-        addBenchmarkRow(model, 8, "Suffix Automaton", "Module 2 (CO2)", "Minimal state machine O(N) substring queries",
+        addBenchmarkRow(model, 8, "Suffix Automaton (SAM)", "Module 2 (CO2)", "O(N) build, O(M) query", "O(N · Σ)",
                 () -> new SuffixAutomaton("algorithms").containsSubstring("rithm"));
 
-        addBenchmarkRow(model, 9, "Levenshtein Edit Distance", "Module 3 (CO3)", "Wagner-Fischer 2D dynamic programming table",
+        addBenchmarkRow(model, 9, "Levenshtein Edit Distance", "Module 3 (CO3)", "O(N · M)", "O(N · M)",
                 () -> Levenshtein.computeDistance("kitten", "sitting") == 3);
 
-        addBenchmarkRow(model, 10, "Damerau-Levenshtein", "Module 3 (CO3)", "Adjacent transposition optimal alignment",
+        addBenchmarkRow(model, 10, "Damerau-Levenshtein", "Module 3 (CO3)", "O(N · M)", "O(N · M)",
                 () -> DamerauLevenshtein.computeDistance("CS102", "SC102") == 1);
 
-        addBenchmarkRow(model, 11, "Matrix-Chain Mult (MCM)", "Module 3 (CO3)", "O(N^3) optimal parenthesization order",
+        addBenchmarkRow(model, 11, "Matrix-Chain Mult (MCM)", "Module 3 (CO3)", "O(K³)", "O(K²)",
                 () -> MatrixChainMult.solve(new int[]{10, 30, 5, 60}, null).minMultiplications == 4500);
 
         if (review1Only) {
             return;
         }
 
-        addBenchmarkRow(model, 12, "Network Flow (Dinic)", "Module 4 (CO4)", "BFS level graph and blocking flow max-flow",
+        addBenchmarkRow(model, 12, "Network Flow (Dinic)", "Module 4 (CO4)", "O(V² E)", "O(V + E)",
                 () -> {
                     edutrack.algorithms.flow.FlowNetwork net = new edutrack.algorithms.flow.FlowNetwork(4);
                     net.addEdge(0, 1, 10); net.addEdge(0, 2, 5); net.addEdge(1, 2, 15);
@@ -2047,27 +2047,27 @@ public class EduTrackGUI extends JFrame {
                     return edutrack.algorithms.flow.DinicsAlgorithm.maxFlow(net, 0, 3) == 15;
                 });
 
-        addBenchmarkRow(model, 13, "DPLL SAT Solver", "Module 5 (CO5)", "Exam timetable constraint satisfaction in CNF",
+        addBenchmarkRow(model, 13, "DPLL SAT Solver", "Module 5 (CO5)", "O(2^V) worst-case", "O(V + C)",
                 () -> {
                     MyArrayList<DpllSatSolver.Clause> cl = new MyArrayList<>();
                     cl.add(new DpllSatSolver.Clause(1, 2)); cl.add(new DpllSatSolver.Clause(-1, 2));
                     return DpllSatSolver.solve(cl, 2).isSatisfiable;
                 });
 
-        addBenchmarkRow(model, 14, "Vertex Cover 2-Approx", "Module 5 (CO5)", "Maximal matching 2*OPT factor guarantee",
+        addBenchmarkRow(model, 14, "Vertex Cover 2-Approx", "Module 5 (CO5)", "O(V + E)", "O(V)",
                 () -> {
                     MyArrayList<Pair<Integer, Integer>> edges = new MyArrayList<>();
                     edges.add(new Pair<>(0, 1)); edges.add(new Pair<>(1, 2));
                     return VertexCover2Approx.approximateCover(3, edges).approxCoverSize <= 4;
                 });
 
-        addBenchmarkRow(model, 15, "Miller-Rabin Primality", "Module 6 (CO6)", "Deterministic & probabilistic prime witnesses",
+        addBenchmarkRow(model, 15, "Miller-Rabin Primality", "Module 6 (CO6)", "O(k log³ n)", "O(1)",
                 () -> MillerRabin.isPrime(1000000007L) && !MillerRabin.isPrime(1000000005L));
 
-        addBenchmarkRow(model, 16, "Blelloch Parallel Scan", "Module 6 (CO6)", "Work-efficient prefix sum equality",
+        addBenchmarkRow(model, 16, "Blelloch Parallel Scan", "Module 6 (CO6)", "O(N) work, O(log N) span", "O(N)",
                 () -> BlellochScan.inclusiveScan(new long[]{1, 2, 3, 4, 5, 6, 7, 8})[7] == 36);
 
-        addBenchmarkRow(model, 17, "Brent's Theorem Modeler", "Module 6 (CO6)", "Analytical speedup bounds T_P <= (T1-T_inf)/P + T_inf",
+        addBenchmarkRow(model, 17, "Brent's Theorem Modeler", "Module 6 (CO6)", "O(1) analytical", "O(1)",
                 () -> BrentsTheorem.analyze(1000, 10, 4).expectedSpeedup > 1.0);
     }
 
@@ -2075,7 +2075,8 @@ public class EduTrackGUI extends JFrame {
         boolean run() throws Exception;
     }
 
-    private void addBenchmarkRow(DefaultTableModel model, int id, String name, String module, String desc, BenchmarkCase testCase) {
+    private void addBenchmarkRow(DefaultTableModel model, int id, String name, String module,
+                                 String timeComplexity, String spaceComplexity, BenchmarkCase testCase) {
         long t1 = System.nanoTime();
         boolean pass = false;
         try {
@@ -2084,7 +2085,7 @@ public class EduTrackGUI extends JFrame {
         long elapsed = (System.nanoTime() - t1) / 1000;
 
         model.addRow(new Object[]{
-                id, name, module, desc,
+                id, name, module, timeComplexity, spaceComplexity,
                 pass ? "PASS" : "FAIL",
                 elapsed + " µs"
         });
