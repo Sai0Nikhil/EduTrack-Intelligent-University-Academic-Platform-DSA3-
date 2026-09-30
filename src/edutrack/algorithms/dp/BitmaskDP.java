@@ -101,13 +101,15 @@ public class BitmaskDP {
             currNode = prevNode;
         }
 
-        // Reverse path to order from start
+        // Reverse path to order from start (path already contains 0 as initial node)
         MyArrayList<Integer> orderedPath = new MyArrayList<>();
-        orderedPath.add(0);
         for (int i = path.size() - 1; i >= 0; i--) {
             orderedPath.add(path.get(i));
         }
-        orderedPath.add(0); // return to start
+        // Return to start department 0
+        if (orderedPath.isEmpty() || orderedPath.get(orderedPath.size() - 1) != 0) {
+            orderedPath.add(0);
+        }
 
         return new TourResult(minTotalCost, orderedPath);
     }

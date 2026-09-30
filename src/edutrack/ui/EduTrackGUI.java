@@ -40,12 +40,21 @@ import edutrack.service.ResourceAllocationService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
- * Modern Java Swing GUI Desktop Application for EduTrack.
- * Visualizes all 6 advanced algorithm modules with interactive controls and tables.
+ * Modern Java Swing Desktop Application for EduTrack Academic Engine.
+ * Features high-contrast warm dark theme, visual KMP failure table, side-by-side
+ * dual-document plagiarism studio with synchronized highlights, real-time
+ * 2D Campus Auditor (Bitmask DP TSP) simulation, and custom non-blocking button/tab painting.
  */
 public class EduTrackGUI extends JFrame {
 
@@ -66,25 +75,236 @@ public class EduTrackGUI extends JFrame {
     private final AnalyticsService analyticsService;
     private final BenchmarkArenaService arenaService;
 
-    // Colors
-    private static final Color BG_DARK = new Color(24, 28, 36);
-    private static final Color BG_CARD = new Color(32, 38, 50);
-    private static final Color TEXT_MAIN = new Color(240, 244, 248);
-    private static final Color TEXT_MUTED = new Color(156, 163, 175);
-    private static final Color ACCENT_BLUE = new ScalableColor(59, 130, 246);
-    private static final Color ACCENT_GREEN = new Color(16, 185, 129);
-    private static final Color ACCENT_AMBER = new Color(245, 158, 11);
+    // High-Contrast Warm Aesthetic Palette (Skin, Sand & Slate Tones)
+    public static final Color BG_DARK = new Color(15, 20, 32);           // Rich Dark Midnight Slate
+    public static final Color BG_CARD = new Color(26, 34, 52);           // Warm Slate Container Card
+    public static final Color BG_CARD_ALT = new Color(18, 24, 38);       // Deep Input & Console Area
+    public static final Color BG_CARD_LIGHTER = new Color(38, 49, 74);   // Elevated Slate Surface
+    public static final Color BORDER_COLOR = new Color(59, 73, 103);      // Slate Border
+    public static final Color TEXT_MAIN = new Color(248, 250, 252);      // Ultra-crisp bright white
+    public static final Color TEXT_MUTED = new Color(203, 213, 225);     // Clear readable silver-champagne
+    public static final Color TEXT_DARK = new Color(15, 23, 42);         // Deep Navy text for light/warm buttons
 
-    // Color alias for safety
-    private static class ScalableColor extends Color {
-        public ScalableColor(int r, int g, int b) { super(r, g, b); }
+    // Warm Skin & Accent Palette
+    public static final Color ACCENT_SKIN = new Color(245, 210, 165);    // Warm Golden Sand / Skin Tone
+    public static final Color ACCENT_PEACH = new Color(253, 186, 140);   // Warm Soft Peach
+    public static final Color ACCENT_CREAM = new Color(254, 243, 199);   // Warm Bisque / Wheat
+    public static final Color ACCENT_AMBER = new Color(245, 158, 11);    // Amber Gold
+    public static final Color ACCENT_GREEN = new Color(34, 197, 94);     // Emerald Mint
+    public static final Color ACCENT_BLUE = new Color(56, 189, 248);     // Electric Sky Blue
+    public static final Color ACCENT_PURPLE = new Color(192, 132, 252);  // Soft Lavender
+    public static final Color ACCENT_CORAL = new Color(251, 113, 133);   // Coral Pink
+    public static final Color ACCENT_RED = new Color(239, 68, 68);       // Crimson Red
+
+    // =========================================================================
+    // CUSTOM MODERN BUTTON (Bypasses OS look-and-feel white button bug)
+    // =========================================================================
+    public static class ModernButton extends JButton {
+        private Color normalBg;
+        private Color hoverBg;
+        private Color pressedBg;
+        private Color normalFg;
+        private Color borderColor;
+        private int cornerRadius = 8;
+        private boolean isHovered = false;
+        private boolean isPressed = false;
+
+        public ModernButton(String text, Color bg, Color fg) {
+            super(text);
+            this.normalBg = bg;
+            this.hoverBg = computeHoverColor(bg);
+            this.pressedBg = computePressedColor(bg);
+            this.normalFg = fg;
+            this.borderColor = computeBorderColor(bg);
+
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setMargin(new Insets(8, 14, 8, 14));
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if (isEnabled()) {
+                        isHovered = true;
+                        repaint();
+                    }
+                }
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    isHovered = false;
+                    isPressed = false;
+                    repaint();
+                }
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (isEnabled()) {
+                        isPressed = true;
+                        repaint();
+                    }
+                }
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    isPressed = false;
+                    repaint();
+                }
+            });
+        }
+
+        public void setCustomColors(Color bg, Color fg) {
+            this.normalBg = bg;
+            this.hoverBg = computeHoverColor(bg);
+            this.pressedBg = computePressedColor(bg);
+            this.normalFg = fg;
+            this.borderColor = computeBorderColor(bg);
+            repaint();
+        }
+
+        private static Color computeHoverColor(Color c) {
+            int r = Math.min(255, c.getRed() + 20);
+            int g = Math.min(255, c.getGreen() + 20);
+            int b = Math.min(255, c.getBlue() + 20);
+            return new Color(r, g, b);
+        }
+
+        private static Color computePressedColor(Color c) {
+            int r = Math.max(0, c.getRed() - 25);
+            int g = Math.max(0, c.getGreen() - 25);
+            int b = Math.max(0, c.getBlue() - 25);
+            return new Color(r, g, b);
+        }
+
+        private static Color computeBorderColor(Color c) {
+            return new Color(Math.min(255, c.getRed() + 30), Math.min(255, c.getGreen() + 30), Math.min(255, c.getBlue() + 30), 180);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            int w = getWidth();
+            int h = getHeight();
+
+            Color fill = !isEnabled() ? new Color(40, 50, 70) : (isPressed ? pressedBg : (isHovered ? hoverBg : normalBg));
+            Color text = !isEnabled() ? new Color(130, 145, 165) : normalFg;
+            Color border = !isEnabled() ? new Color(55, 65, 85) : borderColor;
+
+            // Fill background
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, w, h, cornerRadius, cornerRadius);
+
+            // Draw border
+            g2.setColor(border);
+            g2.setStroke(new BasicStroke(1.2f));
+            g2.drawRoundRect(0, 0, w - 1, h - 1, cornerRadius, cornerRadius);
+
+            // Draw text
+            g2.setFont(getFont());
+            FontMetrics fm = g2.getFontMetrics();
+            String t = getText();
+            int tx = (w - fm.stringWidth(t)) / 2;
+            int ty = (h + fm.getAscent() - fm.getDescent()) / 2;
+
+            g2.setColor(text);
+            g2.drawString(t, tx, ty);
+
+            g2.dispose();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            return new Dimension(d.width + 16, Math.max(34, d.height + 4));
+        }
+    }
+
+    // =========================================================================
+    // CUSTOM MODERN TABBED PANE UI (Eliminates OS white tab headers)
+    // =========================================================================
+    public static class ModernTabbedPaneUI extends BasicTabbedPaneUI {
+        private static final Color TAB_BG_UNSELECTED = new Color(26, 34, 52);
+        private static final Color TAB_BG_SELECTED = new Color(38, 50, 78);
+        private static final Color TAB_BORDER = new Color(59, 73, 103);
+        private static final Color ACCENT_INDICATOR = new Color(245, 210, 165); // Warm Skin/Sand
+        private static final Color TEXT_SELECTED = new Color(245, 210, 165);
+        private static final Color TEXT_UNSELECTED = new Color(203, 213, 225);
+
+        @Override
+        protected void installDefaults() {
+            super.installDefaults();
+            tabInsets = new Insets(10, 16, 10, 16);
+            selectedTabPadInsets = new Insets(0, 0, 0, 0);
+            contentBorderInsets = new Insets(0, 0, 0, 0);
+        }
+
+        @Override
+        protected void paintTabArea(Graphics g, int tabPlacement, int selectedIndex) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(new Color(15, 20, 32));
+            g2.fillRect(0, 0, tabPane.getWidth(), tabPane.getHeight());
+            super.paintTabArea(g, tabPlacement, selectedIndex);
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex,
+                                          int x, int y, int w, int h, boolean isSelected) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (isSelected) {
+                g2.setColor(TAB_BG_SELECTED);
+                g2.fillRoundRect(x + 2, y + 2, w - 4, h - 2, 6, 6);
+
+                // Bottom glow indicator bar in warm skin tone
+                g2.setColor(ACCENT_INDICATOR);
+                g2.fillRect(x + 4, y + h - 3, w - 8, 3);
+            } else {
+                g2.setColor(TAB_BG_UNSELECTED);
+                g2.fillRoundRect(x + 2, y + 4, w - 4, h - 5, 6, 6);
+            }
+
+            g2.setColor(TAB_BORDER);
+            g2.drawRoundRect(x + 2, y + (isSelected ? 2 : 4), w - 4, h - (isSelected ? 2 : 5), 6, 6);
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintText(Graphics g, int tabPlacement, Font font, FontMetrics metrics,
+                                 int tabIndex, String title, Rectangle textRect, boolean isSelected) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(isSelected ? font.deriveFont(Font.BOLD, 13f) : font.deriveFont(Font.PLAIN, 12f));
+            g2.setColor(isSelected ? TEXT_SELECTED : TEXT_UNSELECTED);
+            g2.drawString(title, textRect.x, textRect.y + metrics.getAscent());
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(TAB_BORDER);
+            g2.drawLine(0, 0, tabPane.getWidth(), 0);
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintFocusIndicator(Graphics g, int tabPlacement, Rectangle[] rects,
+                                           int tabIndex, Rectangle iconRect, Rectangle textRect, boolean isSelected) {
+            // No focus outline
+        }
     }
 
     public EduTrackGUI(String baseDir) {
         super("EduTrack – Intelligent University Academic Platform [DSA-3 Engine]");
         this.baseDir = baseDir;
 
-        // Load datasets
+        // Load datasets using zero-java.util engine
         this.courses = DatasetLoader.loadCourses(baseDir + "/data/courses.csv");
         this.students = DatasetLoader.loadStudents(baseDir + "/data/students.csv");
         this.faculty = DatasetLoader.loadFaculty(baseDir + "/data/faculty.csv");
@@ -104,7 +324,8 @@ public class EduTrackGUI extends JFrame {
 
     private void initUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
+        setSize(1260, 840);
+        setMinimumSize(new Dimension(1080, 720));
         setLocationRelativeTo(null);
 
         // Main content container
@@ -115,16 +336,19 @@ public class EduTrackGUI extends JFrame {
         JPanel headerPanel = createHeaderPanel();
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Tabbed Pane for Modules
+        // Tabbed Pane for Modules with custom UI
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+        tabbedPane.setUI(new ModernTabbedPaneUI());
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabbedPane.setBackground(BG_CARD);
+        tabbedPane.setForeground(TEXT_MAIN);
 
         tabbedPane.addTab("  Dashboard  ", createDashboardTab());
-        tabbedPane.addTab("  M1: String Search  ", createStringSearchTab());
-        tabbedPane.addTab("  M2: Suffix & Plagiarism  ", createSuffixPlagiarismTab());
-        tabbedPane.addTab("  M3: Advanced DP  ", createDynamicProgrammingTab());
+        tabbedPane.addTab("  M1: String Search & KMP  ", createStringSearchTab());
+        tabbedPane.addTab("  M2: Suffix & Plagiarism Studio  ", createSuffixPlagiarismTab());
+        tabbedPane.addTab("  M3: Advanced DP & 2D Auditor  ", createDynamicProgrammingTab());
 
-        // CO4, CO5, CO6 are elegantly gated behind Review 2 / Review 3 milestones
+        // CO4, CO5, CO6 gated for Review 1 with early-access demo previews
         tabbedPane.addTab("  M4: Network Flow [Review 2]  ", createReviewGatedTab(
                 "CO4 / Module 4",
                 "Network Flow & Resource Allocation",
@@ -165,7 +389,7 @@ public class EduTrackGUI extends JFrame {
                 createParallelRandomTab()));
 
         tabbedPane.addTab("  Verification Suite  ", createBenchmarkTab());
-        tabbedPane.addTab("  🏆 Benchmark Arena  ", createBenchmarkArenaTab());
+        tabbedPane.addTab("  Benchmark Arena  ", createBenchmarkArenaTab());
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         setContentPane(mainPanel);
@@ -173,16 +397,19 @@ public class EduTrackGUI extends JFrame {
 
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(15, 23, 42));
-        panel.setBorder(new EmptyBorder(16, 24, 16, 24));
+        panel.setBackground(new Color(18, 24, 38));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                new EmptyBorder(14, 24, 14, 24)
+        ));
 
         JLabel titleLabel = new JLabel("EDUTRACK ACADEMIC PLATFORM");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(ACCENT_SKIN);
 
-        JLabel subtitleLabel = new JLabel("Enterprise Advanced-Algorithms Engine (DSA-3) | Zero java.util.* Core");
+        JLabel subtitleLabel = new JLabel("Enterprise Advanced-Algorithms Engine (DSA-3) | 100% Zero java.util.* Core");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitleLabel.setForeground(new Color(148, 163, 184));
+        subtitleLabel.setForeground(TEXT_MUTED);
 
         JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 4));
         textPanel.setOpaque(false);
@@ -190,20 +417,20 @@ public class EduTrackGUI extends JFrame {
         textPanel.add(subtitleLabel);
 
         // Status badges
-        JPanel badgeContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        JPanel badgeContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         badgeContainer.setOpaque(false);
 
         JLabel revBadge = new JLabel(REVIEW_1_MODE ? "  REVIEW 1: CO1–CO3 ACTIVE  " : "  FULL PRODUCTION ENGINE  ");
         revBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        revBadge.setForeground(Color.WHITE);
-        revBadge.setBackground(new Color(59, 130, 246));
+        revBadge.setForeground(TEXT_DARK);
+        revBadge.setBackground(ACCENT_SKIN);
         revBadge.setOpaque(true);
         revBadge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
-        JLabel badge = new JLabel("  ENGINE: ZERO-JAVA.UTIL COMPLIANT  ");
+        JLabel badge = new JLabel("  ZERO-JAVA.UTIL COMPLIANT  ");
         badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        badge.setForeground(Color.WHITE);
-        badge.setBackground(new Color(16, 185, 129));
+        badge.setForeground(TEXT_DARK);
+        badge.setBackground(ACCENT_GREEN);
         badge.setOpaque(true);
         badge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
@@ -234,28 +461,28 @@ public class EduTrackGUI extends JFrame {
         contentCard.setLayout(new BoxLayout(contentCard, BoxLayout.Y_AXIS));
         contentCard.setBackground(BG_CARD);
         contentCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(51, 65, 85), 1),
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
                 new EmptyBorder(32, 40, 32, 40)
         ));
-        contentCard.setMaximumSize(new Dimension(860, 620));
-        contentCard.setPreferredSize(new Dimension(830, 560));
+        contentCard.setMaximumSize(new Dimension(880, 640));
+        contentCard.setPreferredSize(new Dimension(850, 580));
 
         // Badges row
         JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         badgeRow.setOpaque(false);
         badgeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel statusBadge = new JLabel("  ⏳ COMING SOON  ");
+        JLabel statusBadge = new JLabel("  SCHEDULED MILESTONE  ");
         statusBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        statusBadge.setForeground(Color.WHITE);
-        statusBadge.setBackground(ACCENT_AMBER);
+        statusBadge.setForeground(TEXT_DARK);
+        statusBadge.setBackground(ACCENT_PEACH);
         statusBadge.setOpaque(true);
         statusBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
 
         JLabel milestoneBadge = new JLabel("  MILESTONE: " + milestoneText.toUpperCase() + "  ");
         milestoneBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        milestoneBadge.setForeground(Color.WHITE);
-        milestoneBadge.setBackground(new Color(99, 102, 241));
+        milestoneBadge.setForeground(TEXT_DARK);
+        milestoneBadge.setBackground(ACCENT_SKIN);
         milestoneBadge.setOpaque(true);
         milestoneBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
 
@@ -268,7 +495,7 @@ public class EduTrackGUI extends JFrame {
         // Title & Subtitle
         JLabel titleLabel = new JLabel(moduleTitle);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titleLabel.setForeground(TEXT_MAIN);
+        titleLabel.setForeground(ACCENT_SKIN);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentCard.add(titleLabel);
 
@@ -282,23 +509,23 @@ public class EduTrackGUI extends JFrame {
 
         // Review 1 Scope explanation notice box
         JPanel noticeBox = new JPanel(new BorderLayout(8, 8));
-        noticeBox.setBackground(new Color(15, 23, 42));
+        noticeBox.setBackground(BG_DARK);
         noticeBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 4, 0, 0, new Color(59, 130, 246)),
-                new EmptyBorder(12, 16, 12, 16)
+                BorderFactory.createMatteBorder(0, 4, 0, 0, ACCENT_SKIN),
+                new EmptyBorder(14, 18, 14, 18)
         ));
         noticeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel noticeTitle = new JLabel("📘 Review 1 Project Scope & Evaluation Boundary:");
+        JLabel noticeTitle = new JLabel("Review 1 Evaluation Scope (CO1 – CO3 Active):");
         noticeTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        noticeTitle.setForeground(new Color(59, 130, 246));
+        noticeTitle.setForeground(ACCENT_SKIN);
 
-        JLabel noticeText = new JLabel("<html>This platform is structured into iterative engineering milestones. " +
-                "<b>Review 1</b> focuses strictly on foundational data structures and core algorithms: " +
-                "<b>CO1 (String Search & Automata)</b>, <b>CO2 (Suffix Structures & Plagiarism)</b>, and <b>CO3 (Dynamic Programming & Optimization)</b>.<br/>" +
-                "Advanced network flow, NP-reductions, and parallel architectures are scheduled for progressive rollout in " + milestoneText + ".</html>");
+        JLabel noticeText = new JLabel("<html>This academic platform follows strict iterative engineering milestones. " +
+                "<b>Review 1</b> evaluates the foundational string and optimization engines: " +
+                "<b>CO1 (String Matching & Automata)</b>, <b>CO2 (Suffix Sorter & Kasai Plagiarism)</b>, and <b>CO3 (Dynamic Programming & 2D Bitmask TSP)</b>.<br/>" +
+                "Advanced network flow, NP-reductions, and parallel architectures will be demonstrated during " + milestoneText + ".</html>");
         noticeText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        noticeText.setForeground(new Color(203, 213, 225));
+        noticeText.setForeground(TEXT_MUTED);
 
         noticeBox.add(noticeTitle, BorderLayout.NORTH);
         noticeBox.add(noticeText, BorderLayout.CENTER);
@@ -313,44 +540,35 @@ public class EduTrackGUI extends JFrame {
         roadmapTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentCard.add(roadmapTitle);
 
-        contentCard.add(Box.createRigidArea(new Dimension(0, 8)));
+        contentCard.add(Box.createRigidArea(new Dimension(0, 10)));
 
         for (String item : roadmapItems) {
             JPanel itemRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
             itemRow.setOpaque(false);
             itemRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JLabel tag = new JLabel("[PENDING REVIEW]");
+            JLabel tag = new JLabel("[PRE-BUILT]");
             tag.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            tag.setForeground(new Color(251, 191, 36));
+            tag.setForeground(ACCENT_AMBER);
 
             JLabel label = new JLabel(item);
             label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            label.setForeground(new Color(226, 232, 240));
+            label.setForeground(TEXT_MUTED);
 
             itemRow.add(tag);
             itemRow.add(label);
             contentCard.add(itemRow);
         }
 
-        contentCard.add(Box.createRigidArea(new Dimension(0, 20)));
+        contentCard.add(Box.createRigidArea(new Dimension(0, 22)));
 
         // Bottom Unlock / Preview Bar
         JPanel previewBar = new JPanel(new BorderLayout());
         previewBar.setOpaque(false);
         previewBar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel hintLbl = new JLabel("<html><span style='color:#94a3b8; font-size:11px;'>Early-Access Demonstration:</span></html>");
-        JButton btnPreview = new JButton("⚡ Preview Pre-built Draft Engine (Demo Mode)");
-        btnPreview.setBackground(new Color(30, 41, 59));
-        btnPreview.setForeground(new Color(251, 191, 36));
-        btnPreview.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnPreview.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnPreview.setFocusPainted(false);
-        btnPreview.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(245, 158, 11), 1),
-                new EmptyBorder(8, 16, 8, 16)
-        ));
+        JLabel hintLbl = new JLabel("<html><span style='color:#cbd5e1; font-size:11px;'>Early-Access Demonstration:</span></html>");
+        ModernButton btnPreview = new ModernButton("Preview Pre-built Module Engine (Demo Mode)", ACCENT_SKIN, TEXT_DARK);
 
         btnPreview.addActionListener(e -> cardLayout.show(container, "UNLOCKED"));
 
@@ -365,21 +583,17 @@ public class EduTrackGUI extends JFrame {
         JPanel unlockedCard = new JPanel(new BorderLayout());
 
         JPanel bannerPanel = new JPanel(new BorderLayout(10, 0));
-        bannerPanel.setBackground(new Color(15, 23, 42));
+        bannerPanel.setBackground(new Color(18, 24, 38));
         bannerPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(245, 158, 11)),
+                BorderFactory.createMatteBorder(0, 0, 2, 0, ACCENT_AMBER),
                 new EmptyBorder(8, 20, 8, 20)
         ));
 
-        JLabel unlockTitle = new JLabel("⚡ PREVIEW ACTIVE: Pre-built " + coCode + " Engine (Scheduled for " + milestoneText + ")");
+        JLabel unlockTitle = new JLabel("PREVIEW ACTIVE: Pre-built " + coCode + " Engine (Scheduled for " + milestoneText + ")");
         unlockTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        unlockTitle.setForeground(new Color(251, 191, 36));
+        unlockTitle.setForeground(ACCENT_AMBER);
 
-        JButton btnLock = new JButton("🔒 Re-lock for Review 1");
-        btnLock.setBackground(new Color(51, 65, 85));
-        btnLock.setForeground(Color.WHITE);
-        btnLock.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        btnLock.setFocusPainted(false);
+        ModernButton btnLock = new ModernButton("Re-lock for Review 1", BORDER_COLOR, TEXT_MAIN);
         btnLock.addActionListener(e -> cardLayout.show(container, "GATED"));
 
         bannerPanel.add(unlockTitle, BorderLayout.WEST);
@@ -410,16 +624,16 @@ public class EduTrackGUI extends JFrame {
         JPanel metricsGrid = new JPanel(new GridLayout(2, 3, 15, 15));
         metricsGrid.setOpaque(false);
 
-        metricsGrid.add(createMetricCard("Total Courses", String.valueOf(courses.size()), "CS, AI, Math, Data Science, Cyber", new Color(59, 130, 246)));
+        metricsGrid.add(createMetricCard("Total Courses", String.valueOf(courses.size()), "CS, AI, Math, Data Science, Cyber", ACCENT_SKIN));
         metricsGrid.add(createMetricCard("Enrolled Students", String.valueOf(students.size()), "CGPA, Credits & Attendance records", ACCENT_GREEN));
-        metricsGrid.add(createMetricCard("Faculty Members", String.valueOf(faculty.size()), "Course qualifications & workloads", new Color(139, 92, 246)));
+        metricsGrid.add(createMetricCard("Faculty Members", String.valueOf(faculty.size()), "Course qualifications & workloads", ACCENT_PEACH));
         metricsGrid.add(createMetricCard("Assignment Submissions", String.valueOf(submissions.size()), "Multi-document plagiarism test set", ACCENT_AMBER));
-        metricsGrid.add(createMetricCard("Activity Stream Events", String.valueOf(activityLogs.size()), "Continuous streaming audit logs", new Color(236, 72, 153)));
+        metricsGrid.add(createMetricCard("Activity Stream Events", String.valueOf(activityLogs.size()), "Continuous streaming audit logs", ACCENT_CORAL));
         metricsGrid.add(createMetricCard(
                 REVIEW_1_MODE ? "Review 1 Scope" : "DSA Algorithms Active",
                 REVIEW_1_MODE ? "10 Active (CO1–CO3)" : "16 / 16 (Full Engine)",
                 REVIEW_1_MODE ? "CO4–CO6 pre-built in Review 2/3 roadmap" : "M1 to M6 fully verified",
-                new Color(14, 165, 233)));
+                ACCENT_CREAM));
 
         panel.add(metricsGrid, BorderLayout.NORTH);
 
@@ -433,21 +647,22 @@ public class EduTrackGUI extends JFrame {
                 prereq.append(c.getPrerequisites().get(k)).append(k + 1 < c.getPrerequisites().size() ? ", " : "");
             }
             model.addRow(new Object[]{
-                c.getCode(), c.getTitle(), c.getDepartment(), c.getCredits(),
-                c.getMatrixDimensionRows() + " x " + c.getMatrixDimensionCols(),
-                prereq.length() == 0 ? "None" : prereq.toString()
+                    c.getCode(), c.getTitle(), c.getDepartment(), c.getCredits(),
+                    c.getMatrixDimensionRows() + " x " + c.getMatrixDimensionCols(),
+                    prereq.length() == 0 ? "None" : prereq.toString()
             });
         }
 
         JTable table = new JTable(model);
-        table.setRowHeight(24);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        styleTable(table);
+
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(BG_CARD_ALT);
         scrollPane.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(51, 65, 85)),
+                BorderFactory.createLineBorder(BORDER_COLOR),
                 "University Course Catalog (Hand-built Data Structures)",
                 TitledBorder.LEFT, TitledBorder.TOP,
-                new Font("Segoe UI", Font.BOLD, 13), Color.WHITE));
+                new Font("Segoe UI", Font.BOLD, 13), ACCENT_SKIN));
 
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
@@ -458,7 +673,7 @@ public class EduTrackGUI extends JFrame {
         card.setBackground(BG_CARD);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 4, 0, 0, accentColor),
-                new EmptyBorder(12, 16, 12, 16)
+                new EmptyBorder(14, 18, 14, 18)
         ));
 
         JLabel titleLabel = new JLabel(title);
@@ -466,8 +681,8 @@ public class EduTrackGUI extends JFrame {
         titleLabel.setForeground(TEXT_MUTED);
 
         JLabel valLabel = new JLabel(value);
-        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        valLabel.setForeground(TEXT_MAIN);
+        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valLabel.setForeground(accentColor);
 
         JLabel subLabel = new JLabel(subtitle);
         subLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -480,36 +695,49 @@ public class EduTrackGUI extends JFrame {
     }
 
     // =========================================================================
-    // TAB 2: STRING ALGORITHMS (M1 & M2)
+    // TAB 2: STRING ALGORITHMS & VISUAL KMP MATCHING (CO1 / M1)
     // =========================================================================
     private JPanel createStringSearchTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(BG_DARK);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        // Top Search Controls Card
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 10));
         controlPanel.setBackground(BG_CARD);
+        controlPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JLabel lbl = new JLabel("Search Query:");
-        lbl.setForeground(TEXT_MAIN);
-        JTextField queryField = new JTextField("Algorithm", 18);
+        JLabel lbl = new JLabel("Search Query Pattern:");
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(ACCENT_SKIN);
 
-        JRadioButton rKmp = new JRadioButton("KMP Matcher", true);
+        JTextField queryField = new JTextField("Algorithm", 14);
+        queryField.setBackground(BG_CARD_ALT);
+        queryField.setForeground(TEXT_MAIN);
+        queryField.setCaretColor(TEXT_MAIN);
+        queryField.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        queryField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+
+        JRadioButton rKmp = new JRadioButton("KMP Matcher (π Table)", true);
         JRadioButton rZ = new JRadioButton("Z-Algorithm");
-        JRadioButton rRk = new RabinRadioButton("Rabin-Karp Rolling Hash");
-        JRadioButton rAc = new JRadioButton("Aho-Corasick Multi-Keyword");
+        JRadioButton rRk = new JRadioButton("Rabin-Karp Rolling Hash");
+        JRadioButton rAc = new JRadioButton("Aho-Corasick Dictionary");
 
-        rKmp.setForeground(TEXT_MAIN); rKmp.setOpaque(false);
-        rZ.setForeground(TEXT_MAIN); rZ.setOpaque(false);
-        rRk.setForeground(TEXT_MAIN); rRk.setOpaque(false);
-        rAc.setForeground(TEXT_MAIN); rAc.setOpaque(false);
+        rKmp.setForeground(TEXT_MAIN); rKmp.setFont(new Font("Segoe UI", Font.BOLD, 12)); rKmp.setOpaque(false);
+        rZ.setForeground(TEXT_MAIN); rZ.setFont(new Font("Segoe UI", Font.BOLD, 12)); rZ.setOpaque(false);
+        rRk.setForeground(TEXT_MAIN); rRk.setFont(new Font("Segoe UI", Font.BOLD, 12)); rRk.setOpaque(false);
+        rAc.setForeground(TEXT_MAIN); rAc.setFont(new Font("Segoe UI", Font.BOLD, 12)); rAc.setOpaque(false);
 
         ButtonGroup group = new ButtonGroup();
         group.add(rKmp); group.add(rZ); group.add(rRk); group.add(rAc);
 
-        JButton btnSearch = new JButton("Run Pattern Search");
-        btnSearch.setBackground(ACCENT_BLUE);
-        btnSearch.setForeground(Color.WHITE);
+        ModernButton btnSearch = new ModernButton("Run Pattern Search", ACCENT_SKIN, TEXT_DARK);
 
         controlPanel.add(lbl);
         controlPanel.add(queryField);
@@ -521,111 +749,301 @@ public class EduTrackGUI extends JFrame {
 
         panel.add(controlPanel, BorderLayout.NORTH);
 
-        JTextArea resultArea = new JTextArea();
-        resultArea.setFont(new Font("Consolas", Font.PLAIN, 13));
-        resultArea.setEditable(false);
-        resultArea.setBackground(new Color(15, 23, 42));
-        resultArea.setForeground(new Color(226, 232, 240));
-        panel.add(new JScrollPane(resultArea), BorderLayout.CENTER);
+        // Center Split View: Top = Visual Failure Table / Telemetry Card, Bottom = Match Table & Details
+        JPanel centerPanel = new JPanel(new BorderLayout(12, 12));
+        centerPanel.setOpaque(false);
 
-        btnSearch.addActionListener(e -> {
+        // Pi Table Visualizer Card
+        JPanel visualPiCard = new JPanel(new BorderLayout(10, 10));
+        visualPiCard.setBackground(BG_CARD);
+        visualPiCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(12, 16, 12, 16)
+        ));
+
+        JLabel piHeader = new JLabel("KMP PREFIX FAILURE FUNCTION (π TABLE) VISUALIZER:");
+        piHeader.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        piHeader.setForeground(ACCENT_SKIN);
+
+        JPanel piTilesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        piTilesPanel.setOpaque(false);
+
+        JLabel explanationLabel = new JLabel("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                "<b>How KMP Works:</b> The Failure Function <code>π[i]</code> stores the length of the longest proper prefix of <code>P[0..i]</code> that is also a suffix of <code>P[0..i]</code>. " +
+                "On text mismatch at index <code>j</code>, KMP skips directly to <code>π[j-1]</code> without rewinding the text, giving <b>O(N + M)</b> linear time.</span></html>");
+
+        visualPiCard.add(piHeader, BorderLayout.NORTH);
+        visualPiCard.add(piTilesPanel, BorderLayout.CENTER);
+        visualPiCard.add(explanationLabel, BorderLayout.SOUTH);
+
+        // Matches Table
+        String[] matchCols = {"#", "Course Code", "Course Title", "Department", "Match Count", "Found Index Positions"};
+        DefaultTableModel matchModel = new DefaultTableModel(matchCols, 0);
+        JTable matchTable = new JTable(matchModel);
+        styleTable(matchTable);
+
+        JScrollPane matchScroll = new JScrollPane(matchTable);
+        matchScroll.getViewport().setBackground(BG_CARD_ALT);
+        matchScroll.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                "Academic Search Results & Substring Occurrences",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+
+        // Text Log Area for deep mathematical trace
+        JTextArea logArea = new JTextArea();
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        logArea.setEditable(false);
+        logArea.setBackground(BG_CARD_ALT);
+        logArea.setForeground(TEXT_MAIN);
+        logArea.setCaretColor(TEXT_MAIN);
+
+        JScrollPane logScroll = new JScrollPane(logArea);
+        logScroll.setPreferredSize(new Dimension(800, 160));
+        logScroll.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                "Algorithm Execution Telemetry & Complexity Analysis",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+
+        JSplitPane bottomSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, matchScroll, logScroll);
+        bottomSplit.setDividerLocation(260);
+        bottomSplit.setResizeWeight(0.60);
+
+        centerPanel.add(visualPiCard, BorderLayout.NORTH);
+        centerPanel.add(bottomSplit, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        // Search Action Logic
+        ActionListener runSearchAction = e -> {
             String q = queryField.getText().trim();
-            StringBuilder out = new StringBuilder();
+            if (q.isEmpty()) return;
+
+            matchModel.setRowCount(0);
+            piTilesPanel.removeAll();
+            StringBuilder sb = new StringBuilder();
             long start = System.nanoTime();
 
             if (rKmp.isSelected()) {
-                out.append("=== Knuth-Morris-Pratt (KMP) Search for \"").append(q).append("\" ===\n");
-                int[] pi = KmpMatcher.computePi(q);
-                out.append("Failure Function (pi): [");
-                for (int i = 0; i < pi.length; i++) out.append(pi[i]).append(i + 1 < pi.length ? ", " : "]\n\n");
+                piHeader.setText("KMP PREFIX FAILURE FUNCTION (π TABLE) VISUALIZER FOR \"" + q + "\":");
+                explanationLabel.setText("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                        "<b>KMP Theorem:</b> <code>π[i] = k</code> means prefix <code>P[0..k-1]</code> matches suffix ending at <code>i</code>. " +
+                        "Deterministic finite transition ensures text pointer never backtracks (O(N) search span).</span></html>");
 
+                int[] pi = KmpMatcher.computePi(q);
+
+                // Render Visual Character Tiles
+                for (int i = 0; i < q.length(); i++) {
+                    char ch = q.charAt(i);
+                    int val = pi[i];
+
+                    JPanel tile = new JPanel(new GridLayout(3, 1, 0, 2));
+                    tile.setPreferredSize(new Dimension(48, 62));
+                    tile.setBackground(BG_CARD_LIGHTER);
+                    tile.setBorder(BorderFactory.createLineBorder(new Color(245, 210, 165, 180), 1));
+
+                    JLabel charLbl = new JLabel(String.valueOf(ch), SwingConstants.CENTER);
+                    charLbl.setFont(new Font("Consolas", Font.BOLD, 15));
+                    charLbl.setForeground(ACCENT_SKIN);
+
+                    JLabel idxLbl = new JLabel("i=" + i, SwingConstants.CENTER);
+                    idxLbl.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+                    idxLbl.setForeground(TEXT_MUTED);
+
+                    JLabel valLbl = new JLabel("π=" + val, SwingConstants.CENTER);
+                    valLbl.setFont(new Font("Consolas", Font.BOLD, 12));
+                    valLbl.setForeground(val > 0 ? ACCENT_AMBER : Color.LIGHT_GRAY);
+
+                    tile.add(charLbl);
+                    tile.add(idxLbl);
+                    tile.add(valLbl);
+                    piTilesPanel.add(tile);
+                }
+
+                // Search courses
                 MyArrayList<Pair<Course, Integer>> matches = searchService.searchCoursesByKMP(q);
-                out.append("Found ").append(matches.size()).append(" matching courses:\n");
                 for (int i = 0; i < matches.size(); i++) {
                     Pair<Course, Integer> p = matches.get(i);
-                    out.append(String.format("  [%d] %-8s | %-45s | Matches: %d\n",
-                            i + 1, p.first.getCode(), p.first.getTitle(), p.second));
+                    MyArrayList<Integer> occ = KmpMatcher.search(p.first.getTitle(), q, true);
+                    matchModel.addRow(new Object[]{
+                            (i + 1), p.first.getCode(), p.first.getTitle(), p.first.getDepartment(),
+                            p.second, printList(occ)
+                    });
                 }
+
+                sb.append("=== Knuth-Morris-Pratt (KMP) String Matching ===\n");
+                sb.append("Pattern   : \"").append(q).append("\" (Length: ").append(q.length()).append(")\n");
+                sb.append("π Array   : [");
+                for (int i = 0; i < pi.length; i++) sb.append(pi[i]).append(i + 1 < pi.length ? ", " : "]\n");
+                sb.append("Complexity: Preprocessing O(M), Matching O(N) | No text rewinding\n");
+                sb.append("Courses matched: ").append(matches.size()).append("\n");
+
             } else if (rZ.isSelected()) {
-                out.append("=== Z-Algorithm Matcher for Pattern \"").append(q).append("\" ===\n");
+                piHeader.setText("Z-ALGORITHM LONGEST PREFIX BOXES (Z-ARRAY) FOR \"" + q + "\":");
+                explanationLabel.setText("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                        "<b>Z-Algorithm Theorem:</b> <code>Z[i]</code> is the length of the longest substring starting at <code>S[i]</code> that matches the prefix <code>S[0..]</code>. " +
+                        "Maintains a sliding window <code>[L, R]</code> to achieve O(N + M) linear time.</span></html>");
+
+                int[] zArr = ZAlgorithm.computeZ(q);
+                for (int i = 0; i < q.length(); i++) {
+                    char ch = q.charAt(i);
+                    int val = zArr[i];
+
+                    JPanel tile = new JPanel(new GridLayout(3, 1, 0, 2));
+                    tile.setPreferredSize(new Dimension(48, 62));
+                    tile.setBackground(BG_CARD_LIGHTER);
+                    tile.setBorder(BorderFactory.createLineBorder(new Color(253, 186, 140, 180), 1));
+
+                    JLabel charLbl = new JLabel(String.valueOf(ch), SwingConstants.CENTER);
+                    charLbl.setFont(new Font("Consolas", Font.BOLD, 15));
+                    charLbl.setForeground(ACCENT_PEACH);
+
+                    JLabel idxLbl = new JLabel("i=" + i, SwingConstants.CENTER);
+                    idxLbl.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+                    idxLbl.setForeground(TEXT_MUTED);
+
+                    JLabel valLbl = new JLabel("Z=" + val, SwingConstants.CENTER);
+                    valLbl.setFont(new Font("Consolas", Font.BOLD, 12));
+                    valLbl.setForeground(val > 0 ? ACCENT_GREEN : Color.LIGHT_GRAY);
+
+                    tile.add(charLbl);
+                    tile.add(idxLbl);
+                    tile.add(valLbl);
+                    piTilesPanel.add(tile);
+                }
+
+                int matchCount = 0;
                 for (int i = 0; i < courses.size(); i++) {
                     Course c = courses.get(i);
-                    MyArrayList<Integer> occurrences = ZAlgorithm.search(c.getTitle(), q);
-                    if (!occurrences.isEmpty()) {
-                        out.append(String.format("  • %-8s: %-40s -> Matches at indices %s\n",
-                                c.getCode(), c.getTitle(), printList(occurrences)));
+                    MyArrayList<Integer> occ = ZAlgorithm.search(c.getTitle(), q);
+                    if (!occ.isEmpty()) {
+                        matchCount++;
+                        matchModel.addRow(new Object[]{
+                                matchCount, c.getCode(), c.getTitle(), c.getDepartment(), occ.size(), printList(occ)
+                        });
                     }
                 }
+
+                sb.append("=== Z-Algorithm Linear-Time Phrase Detection ===\n");
+                sb.append("Pattern   : \"").append(q).append("\"\n");
+                sb.append("Z-Array   : [");
+                for (int i = 0; i < zArr.length; i++) sb.append(zArr[i]).append(i + 1 < zArr.length ? ", " : "]\n");
+                sb.append("Courses matched: ").append(matchCount).append("\n");
+
             } else if (rRk.isSelected()) {
-                out.append("=== Rabin-Karp Rolling Hash (Double-Modulus) for \"").append(q).append("\" ===\n");
+                piHeader.setText("RABIN-KARP DOUBLE-MODULUS ROLLING HASH:");
+                explanationLabel.setText("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                        "<b>Rabin-Karp Rolling Hash:</b> Computes polynomial rolling hashes with base <code>B=257</code> and moduli <code>10^9+7</code>, <code>10^9+9</code>. " +
+                        "O(1) window update per shift, eliminating false-positive hash collisions.</span></html>");
+
+                JLabel hashBadge = new JLabel("  MODULI: 1,000,000,007 & 1,000,000,009 | BASE: 257  ");
+                hashBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                hashBadge.setForeground(TEXT_DARK);
+                hashBadge.setBackground(ACCENT_AMBER);
+                hashBadge.setOpaque(true);
+                hashBadge.setBorder(new EmptyBorder(6, 12, 6, 12));
+                piTilesPanel.add(hashBadge);
+
                 MyArrayList<Course> matches = searchService.searchCodeByRabinKarp(q);
-                out.append("Matches found: ").append(matches.size()).append("\n");
                 for (int i = 0; i < matches.size(); i++) {
-                    out.append("  • ").append(matches.get(i)).append("\n");
+                    Course c = matches.get(i);
+                    matchModel.addRow(new Object[]{
+                            (i + 1), c.getCode(), c.getTitle(), c.getDepartment(), 1, "[Code Exact Match]"
+                    });
                 }
+
+                sb.append("=== Rabin-Karp Rolling Hash Matching ===\n");
+                sb.append("Query : \"").append(q).append("\"\n");
+                sb.append("Courses matched: ").append(matches.size()).append("\n");
+
             } else if (rAc.isSelected()) {
+                piHeader.setText("AHO-CORASICK MULTI-KEYWORD AUTOMATON:");
+                explanationLabel.setText("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                        "<b>Aho-Corasick Automaton:</b> Constructs a Trie with BFS failure & dictionary output links. " +
+                        "Simultaneously searches all dictionary keywords in a single linear pass over text O(N + M + K).</span></html>");
+
                 String[] dict = {"Algorithm", "Dynamic Programming", "Suffix", "Network", "Bipartite", "König", "Approximation", "Parallel"};
-                out.append("=== Aho-Corasick Multi-Pattern Dictionary Matching ===\n");
-                out.append("Dictionary keywords: ");
-                for (String kw : dict) out.append("\"").append(kw).append("\" ");
-                out.append("\n\n");
+                for (String kw : dict) {
+                    JLabel kwBadge = new JLabel(" " + kw + " ");
+                    kwBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                    kwBadge.setForeground(TEXT_MAIN);
+                    kwBadge.setBackground(BG_CARD_LIGHTER);
+                    kwBadge.setOpaque(true);
+                    kwBadge.setBorder(BorderFactory.createLineBorder(ACCENT_SKIN, 1));
+                    piTilesPanel.add(kwBadge);
+                }
 
                 MyArrayList<AhoCorasick.MatchResult> acMatches = searchService.tagKeywordsAhoCorasick(libraryText, dict);
-                out.append("Total occurrences detected across library compendium: ").append(acMatches.size()).append("\n");
-                for (int i = 0; i < Math.min(25, acMatches.size()); i++) {
-                    out.append("  [").append(i + 1).append("] ").append(acMatches.get(i)).append("\n");
+                for (int i = 0; i < Math.min(50, acMatches.size()); i++) {
+                    AhoCorasick.MatchResult mr = acMatches.get(i);
+                    matchModel.addRow(new Object[]{
+                            (i + 1), "LIB_DOC", mr.keyword, "Handbook Library", 1, "@ Character Pos " + mr.position
+                    });
                 }
+
+                sb.append("=== Aho-Corasick Dictionary Matcher ===\n");
+                sb.append("Total occurrences across Algorithms Handbook: ").append(acMatches.size()).append("\n");
             }
 
             long elapsed = (System.nanoTime() - start) / 1000;
-            out.append(String.format("\n[Execution Time: %d µs | Zero java.util.* Core]\n", elapsed));
-            resultArea.setText(out.toString());
-        });
+            sb.append(String.format("\n[Execution Time: %d µs | Zero java.util.* Engine]\n", elapsed));
+            logArea.setText(sb.toString());
+
+            piTilesPanel.revalidate();
+            piTilesPanel.repaint();
+        };
+
+        btnSearch.addActionListener(runSearchAction);
+        queryField.addActionListener(runSearchAction);
+
+        // Trigger initial search for visual demo
+        SwingUtilities.invokeLater(() -> btnSearch.doClick());
 
         return panel;
     }
 
-    private static class RabinRadioButton extends JRadioButton {
-        RabinRadioButton(String text) { super(text); }
-    }
-
     // =========================================================================
-    // TAB 3: SUFFIX STRUCTURES & PLAGIARISM (M2)
+    // TAB 3: SUFFIX STRUCTURES & DUAL-DOCUMENT PLAGIARISM STUDIO (CO2 / M2)
     // =========================================================================
     private JPanel createSuffixPlagiarismTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(BG_DARK);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        // Top Control Bar
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JComboBox<String> sub1Box = new JComboBox<>(new String[]{
-            "Alice (submission_cs101_alice.txt)",
-            "Bob (submission_cs101_bob.txt)",
-            "Carol (submission_cs101_carol.txt)"
-        });
-        JComboBox<String> sub2Box = new JComboBox<>(new String[]{
-            "Bob (submission_cs101_bob.txt)",
-            "Alice (submission_cs101_alice.txt)",
-            "Carol (submission_cs101_carol.txt)"
-        });
+        JLabel lbl1 = new JLabel("Document 1:");
+        lbl1.setForeground(ACCENT_SKIN);
+        lbl1.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        JButton btnPlagiarism = new JButton("Run Kasai LCP Plagiarism Check");
-        btnPlagiarism.setBackground(new Color(239, 68, 68));
-        btnPlagiarism.setForeground(Color.WHITE);
+        String[] subOptions = new String[]{
+                "Alice (submission_cs101_alice.txt)",
+                "Bob (submission_cs101_bob.txt)",
+                "Carol (submission_cs101_carol.txt)"
+        };
 
-        JButton btnSAIS = new JButton("Demo SA-IS Linear Suffix Array");
-        btnSAIS.setBackground(ACCENT_BLUE);
-        btnSAIS.setForeground(Color.WHITE);
+        JComboBox<String> sub1Box = new JComboBox<>(subOptions);
+        JComboBox<String> sub2Box = new JComboBox<>(subOptions);
+        sub1Box.setSelectedIndex(0);
+        sub2Box.setSelectedIndex(1);
 
-        JButton btnSAM = new JButton("Suffix Automaton Substring Query");
-        btnSAM.setBackground(ACCENT_GREEN);
-        btnSAM.setForeground(Color.WHITE);
+        JLabel lbl2 = new JLabel("Document 2:");
+        lbl2.setForeground(ACCENT_SKIN);
+        lbl2.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        topControls.add(new JLabel("Doc 1:"));
+        ModernButton btnPlagiarism = new ModernButton("Run Kasai LCP Plagiarism Check", ACCENT_RED, Color.WHITE);
+        ModernButton btnSAIS = new ModernButton("Demo SA-IS Suffix Array", ACCENT_BLUE, TEXT_DARK);
+        ModernButton btnSAM = new ModernButton("Suffix Automaton Query", ACCENT_SKIN, TEXT_DARK);
+
+        topControls.add(lbl1);
         topControls.add(sub1Box);
-        topControls.add(new JLabel("Doc 2:"));
+        topControls.add(lbl2);
         topControls.add(sub2Box);
         topControls.add(btnPlagiarism);
         topControls.add(btnSAIS);
@@ -633,14 +1051,120 @@ public class EduTrackGUI extends JFrame {
 
         panel.add(topControls, BorderLayout.NORTH);
 
-        JTextArea outputArea = new JTextArea();
-        outputArea.setFont(new Font("Consolas", Font.PLAIN, 13));
-        outputArea.setEditable(false);
-        outputArea.setBackground(new Color(15, 23, 42));
-        outputArea.setForeground(new Color(226, 232, 240));
+        // Center: Side-by-Side Dual Document Visualizer
+        JPanel centerStudio = new JPanel(new BorderLayout(12, 12));
+        centerStudio.setOpaque(false);
 
-        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+        // Plagiarism Telemetry Card
+        JPanel telemetryCard = new JPanel(new BorderLayout(10, 6));
+        telemetryCard.setBackground(BG_CARD);
+        telemetryCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(10, 16, 10, 16)
+        ));
 
+        JLabel meterLabel = new JLabel("PLAGIARISM SIMILARITY GAUGE: Click [Run Kasai LCP Plagiarism Check] to analyze");
+        meterLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        meterLabel.setForeground(TEXT_MAIN);
+
+        JLabel meterDetail = new JLabel("Algorithmic Engine: Generalized Suffix Array + Kasai's LCP Array computed in O(N) linear time");
+        meterDetail.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        meterDetail.setForeground(TEXT_MUTED);
+
+        telemetryCard.add(meterLabel, BorderLayout.NORTH);
+        telemetryCard.add(meterDetail, BorderLayout.CENTER);
+
+        // Dual Document Split Panes
+        JTextPane doc1Pane = new JTextPane();
+        doc1Pane.setEditable(false);
+        doc1Pane.setBackground(BG_CARD_ALT);
+        doc1Pane.setForeground(TEXT_MAIN);
+        doc1Pane.setFont(new Font("Consolas", Font.PLAIN, 12));
+
+        JTextPane doc2Pane = new JTextPane();
+        doc2Pane.setEditable(false);
+        doc2Pane.setBackground(BG_CARD_ALT);
+        doc2Pane.setForeground(TEXT_MAIN);
+        doc2Pane.setFont(new Font("Consolas", Font.PLAIN, 12));
+
+        JScrollPane scroll1 = new JScrollPane(doc1Pane);
+        scroll1.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                "Document 1: Alice (submission_cs101_alice.txt)",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+
+        JScrollPane scroll2 = new JScrollPane(doc2Pane);
+        scroll2.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                "Document 2: Bob (submission_cs101_bob.txt)",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+
+        JSplitPane dualDocSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scroll1, scroll2);
+        dualDocSplit.setDividerLocation(580);
+        dualDocSplit.setResizeWeight(0.50);
+
+        // Bottom Excerpt Box
+        JTextArea quoteArea = new JTextArea();
+        quoteArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        quoteArea.setEditable(false);
+        quoteArea.setBackground(BG_CARD_ALT);
+        quoteArea.setForeground(ACCENT_AMBER);
+
+        JScrollPane quoteScroll = new JScrollPane(quoteArea);
+        quoteScroll.setPreferredSize(new Dimension(800, 140));
+        quoteScroll.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                "Exact Extracted Plagiarized Passage (Kasai LCP Intersection)",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, dualDocSplit, quoteScroll);
+        mainSplit.setDividerLocation(360);
+        mainSplit.setResizeWeight(0.70);
+
+        centerStudio.add(telemetryCard, BorderLayout.NORTH);
+        centerStudio.add(mainSplit, BorderLayout.CENTER);
+        panel.add(centerStudio, BorderLayout.CENTER);
+
+        // Document change loaders
+        Runnable loadDocuments = () -> {
+            int idx1 = sub1Box.getSelectedIndex();
+            int idx2 = sub2Box.getSelectedIndex();
+            if (idx1 < submissions.size() && idx2 < submissions.size()) {
+                doc1Pane.setText(submissions.get(idx1).getTextContent());
+                doc2Pane.setText(submissions.get(idx2).getTextContent());
+                doc1Pane.setCaretPosition(0);
+                doc2Pane.setCaretPosition(0);
+            }
+        };
+
+        sub1Box.addActionListener(e -> {
+            int idx = sub1Box.getSelectedIndex();
+            if (idx < submissions.size()) {
+                scroll1.setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR),
+                        "Document 1: " + submissions.get(idx).getStudentId() + " (" + submissions.get(idx).getTitle() + ")",
+                        TitledBorder.LEFT, TitledBorder.TOP,
+                        new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+                loadDocuments.run();
+            }
+        });
+
+        sub2Box.addActionListener(e -> {
+            int idx = sub2Box.getSelectedIndex();
+            if (idx < submissions.size()) {
+                scroll2.setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR),
+                        "Document 2: " + submissions.get(idx).getStudentId() + " (" + submissions.get(idx).getTitle() + ")",
+                        TitledBorder.LEFT, TitledBorder.TOP,
+                        new Font("Segoe UI", Font.BOLD, 12), ACCENT_SKIN));
+                loadDocuments.run();
+            }
+        });
+
+        // Plagiarism check action
         btnPlagiarism.addActionListener(e -> {
             int idx1 = sub1Box.getSelectedIndex();
             int idx2 = sub2Box.getSelectedIndex();
@@ -649,8 +1173,45 @@ public class EduTrackGUI extends JFrame {
             AssignmentSubmission s1 = submissions.get(idx1);
             AssignmentSubmission s2 = submissions.get(idx2);
 
+            loadDocuments.run();
+
+            // Clear previous highlights
+            doc1Pane.getHighlighter().removeAllHighlights();
+            doc2Pane.getHighlighter().removeAllHighlights();
+
             PlagiarismDetectionService.PlagiarismReport rep = plagiarismService.compareAssignments(s1, s2, 40);
-            outputArea.setText(rep.toString());
+
+            // Highlight shared passages in glowing amber
+            Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(new Color(245, 158, 11, 160));
+            StringBuilder quoteSb = new StringBuilder();
+
+            if (rep.sharedExcerpts.size() > 0) {
+                meterLabel.setText(String.format("CRITICAL ALERT: %.1f%% PLAGIARISM OVERLAP DETECTED BETWEEN %s AND %s",
+                        rep.similarityScore * 100, s1.getStudentId(), s2.getStudentId()));
+                meterLabel.setForeground(ACCENT_RED);
+
+                for (int i = 0; i < rep.sharedExcerpts.size(); i++) {
+                    KasaiLCP.SharedExcerpt ex = rep.sharedExcerpts.get(i);
+                    try {
+                        doc1Pane.getHighlighter().addHighlight(ex.posDoc1, ex.posDoc1 + ex.length, painter);
+                        doc2Pane.getHighlighter().addHighlight(ex.posDoc2, ex.posDoc2 + ex.length, painter);
+                    } catch (Exception ignored) {}
+
+                    quoteSb.append(String.format("=== SHARED EXCERPT #%d (%d Characters Copied) ===\n", i + 1, ex.length));
+                    quoteSb.append("\"").append(ex.text).append("\"\n\n");
+                }
+
+                meterDetail.setText(String.format("Found %d identical copied block(s) (>= 40 chars). Longest identical substring: %d chars. Status: Synchronized Yellow Highlight Active.",
+                        rep.sharedExcerpts.size(), rep.sharedExcerpts.get(0).length));
+            } else {
+                meterLabel.setText("PASS: 0.0% DIRECT PLAGIARISM OVERLAP (ORIGINAL CONTENT VERIFIED)");
+                meterLabel.setForeground(ACCENT_GREEN);
+                meterDetail.setText("No shared substring passages >= 40 characters detected between selected documents.");
+                quoteSb.append("No plagiarized passages detected between ").append(s1.getStudentId()).append(" and ").append(s2.getStudentId());
+            }
+
+            quoteArea.setText(quoteSb.toString());
+            quoteArea.setCaretPosition(0);
         });
 
         btnSAIS.addActionListener(e -> {
@@ -664,7 +1225,8 @@ public class EduTrackGUI extends JFrame {
             for (int i = 0; i < sa.length; i++) {
                 sb.append(String.format("%-6d | %-6d | \"%s\"\n", i, sa[i], sample.substring(sa[i])));
             }
-            outputArea.setText(sb.toString());
+            quoteArea.setText(sb.toString());
+            quoteArea.setCaretPosition(0);
         });
 
         btnSAM.addActionListener(e -> {
@@ -677,108 +1239,270 @@ public class EduTrackGUI extends JFrame {
             sb.append("• Contains 'Algorithms'     : ").append(sam.containsSubstring("Algorithms")).append("\n");
             sb.append("• Contains 'Quantum'        : ").append(sam.containsSubstring("Quantum")).append("\n");
             sb.append("• Longest Common Substring with \"University Systems Architecture\": \"")
-              .append(sam.findLongestCommonSubstring("University Systems Architecture")).append("\"\n");
-            outputArea.setText(sb.toString());
+                    .append(sam.findLongestCommonSubstring("University Systems Architecture")).append("\"\n");
+            quoteArea.setText(sb.toString());
+            quoteArea.setCaretPosition(0);
         });
+
+        // Initialize documents and run initial demo check
+        loadDocuments.run();
+        SwingUtilities.invokeLater(() -> btnPlagiarism.doClick());
 
         return panel;
     }
 
     // =========================================================================
-    // TAB 4: ADVANCED DYNAMIC PROGRAMMING (M3)
+    // TAB 4: ADVANCED DYNAMIC PROGRAMMING & 2D AUDITOR SIMULATION (CO3 / M3)
     // =========================================================================
     private JPanel createDynamicProgrammingTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(BG_DARK);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
-        topControls.setBackground(BG_CARD);
+        // Sub-panel cards using CardLayout for clean switching
+        CardLayout dpCardLayout = new CardLayout();
+        JPanel dpCardsContainer = new JPanel(dpCardLayout);
+        dpCardsContainer.setOpaque(false);
 
-        JTextField typoField = new JTextField("Operatng Systms", 14);
-        JButton btnTypo = new JButton("Levenshtein / Damerau Typo Fix");
-        JButton btnMCM = new JButton("Matrix-Chain Multiplication (MCM)");
-        JButton btnTSP = new JButton("Bitmask DP (Traveling Auditor)");
-        JButton btnOBST = new JButton("Optimal BST (OBST)");
+        // --- Card 1: 2D Campus Auditor (Bitmask DP TSP) ---
+        JPanel tspPanel = new JPanel(new BorderLayout(12, 12));
+        tspPanel.setOpaque(false);
 
-        topControls.add(new JLabel("Misspelled Query:"));
-        topControls.add(typoField);
-        topControls.add(btnTypo);
-        topControls.add(btnMCM);
-        topControls.add(btnTSP);
-        topControls.add(btnOBST);
+        // Center 2D Vector Canvas
+        CampusAuditorCanvas auditorCanvas = new CampusAuditorCanvas();
 
-        panel.add(topControls, BorderLayout.NORTH);
+        // Playback Toolbar
+        JPanel animToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
+        animToolbar.setBackground(BG_CARD);
+        animToolbar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JTextArea dpArea = new JTextArea();
-        dpArea.setFont(new Font("Consolas", Font.PLAIN, 13));
-        dpArea.setEditable(false);
-        dpArea.setBackground(new Color(15, 23, 42));
-        dpArea.setForeground(new Color(226, 232, 240));
-        panel.add(new JScrollPane(dpArea), BorderLayout.CENTER);
+        ModernButton btnPlan = new ModernButton("Plan Optimal Tour (Bitmask DP)", ACCENT_SKIN, TEXT_DARK);
+        ModernButton btnPlay = new ModernButton("Play Simulation", ACCENT_GREEN, TEXT_DARK);
+        ModernButton btnPause = new ModernButton("Pause", ACCENT_AMBER, TEXT_DARK);
+        ModernButton btnPrev = new ModernButton("Step Prev", BG_CARD_LIGHTER, TEXT_MAIN);
+        ModernButton btnNext = new ModernButton("Step Next", BG_CARD_LIGHTER, TEXT_MAIN);
+        ModernButton btnReset = new ModernButton("Reset", BORDER_COLOR, TEXT_MAIN);
 
-        btnTypo.addActionListener(e -> {
-            String q = typoField.getText().trim();
+        JLabel speedLbl = new JLabel("Speed:");
+        speedLbl.setForeground(ACCENT_SKIN);
+        speedLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+
+        JSlider speedSlider = new JSlider(1, 100, 40);
+        speedSlider.setPreferredSize(new Dimension(100, 22));
+        speedSlider.setOpaque(false);
+        speedSlider.addChangeListener(e -> auditorCanvas.setSpeed(speedSlider.getValue()));
+
+        animToolbar.add(btnPlan);
+        animToolbar.add(btnPlay);
+        animToolbar.add(btnPause);
+        animToolbar.add(btnPrev);
+        animToolbar.add(btnNext);
+        animToolbar.add(btnReset);
+        animToolbar.add(speedLbl);
+        animToolbar.add(speedSlider);
+
+        tspPanel.add(animToolbar, BorderLayout.NORTH);
+        tspPanel.add(auditorCanvas, BorderLayout.CENTER);
+
+        btnPlan.addActionListener(e -> {
+            BitmaskDP.TourResult tour = analyticsService.planAuditorTour();
+            auditorCanvas.setTour(tour);
+            auditorCanvas.play();
+        });
+
+        btnPlay.addActionListener(e -> auditorCanvas.play());
+        btnPause.addActionListener(e -> auditorCanvas.pause());
+        btnPrev.addActionListener(e -> auditorCanvas.stepBackward());
+        btnNext.addActionListener(e -> auditorCanvas.stepForward());
+        btnReset.addActionListener(e -> auditorCanvas.reset());
+
+        // --- Card 2: Levenshtein & Damerau Typo Engine ---
+        JPanel typoPanel = new JPanel(new BorderLayout(14, 14));
+        typoPanel.setBackground(BG_CARD);
+        typoPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(16, 20, 16, 20)
+        ));
+
+        JPanel typoControlRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        typoControlRow.setOpaque(false);
+
+        JLabel typoLbl = new JLabel("Misspelled Academic Query / Code:");
+        typoLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        typoLbl.setForeground(ACCENT_SKIN);
+
+        JTextField typoInput = new JTextField("Operatng Systms", 18);
+        typoInput.setBackground(BG_CARD_ALT);
+        typoInput.setForeground(TEXT_MAIN);
+        typoInput.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        typoInput.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+
+        ModernButton btnRunTypo = new ModernButton("Run DP Spell-Correction", ACCENT_PEACH, TEXT_DARK);
+
+        typoControlRow.add(typoLbl);
+        typoControlRow.add(typoInput);
+        typoControlRow.add(btnRunTypo);
+
+        JTextArea typoOutput = new JTextArea();
+        typoOutput.setFont(new Font("Consolas", Font.PLAIN, 13));
+        typoOutput.setEditable(false);
+        typoOutput.setBackground(BG_CARD_ALT);
+        typoOutput.setForeground(TEXT_MAIN);
+
+        typoPanel.add(typoControlRow, BorderLayout.NORTH);
+        typoPanel.add(new JScrollPane(typoOutput), BorderLayout.CENTER);
+
+        ActionListener runTypoLogic = e -> {
+            String q = typoInput.getText().trim();
             StringBuilder sb = new StringBuilder();
-            sb.append("=== Dynamic Programming Typo Suggestions for \"").append(q).append("\" ===\n\n");
+            sb.append("=== Wagner-Fischer 2D Dynamic Programming Edit Distance ===\n");
+            sb.append("Query: \"").append(q).append("\"\n\n");
 
-            sb.append("1. Wagner-Fischer Levenshtein Distance (Insert/Delete/Substitute):\n");
+            sb.append("1. Levenshtein Distance (Insert, Delete, Substitute) Top Suggestions:\n");
             MyArrayList<Pair<Course, Integer>> lev = searchService.suggestTypoLevenshtein(q, 10);
-            for (int i = 0; i < Math.min(5, lev.size()); i++) {
+            for (int i = 0; i < Math.min(6, lev.size()); i++) {
                 Pair<Course, Integer> p = lev.get(i);
-                sb.append(String.format("   • Distance %d: %s (%s)\n", p.second, p.first.getTitle(), p.first.getCode()));
+                sb.append(String.format("   [%d] Distance %2d -> %s (%s)\n", i + 1, p.second, p.first.getTitle(), p.first.getCode()));
             }
 
             sb.append("\n2. Damerau-Levenshtein Distance (Adjacent Transpositions Handled):\n");
             String codeTypo = "SC201";
             MyArrayList<Pair<Course, Integer>> dam = searchService.suggestCourseCodeDamerau(codeTypo, 2);
-            sb.append("   Transposed code typo test: \"").append(codeTypo).append("\"\n");
+            sb.append("   Transposed course code test: \"").append(codeTypo).append("\"\n");
             for (int i = 0; i < dam.size(); i++) {
                 Pair<Course, Integer> p = dam.get(i);
-                sb.append(String.format("   • Distance %d: %s - %s\n", p.second, p.first.getCode(), p.first.getTitle()));
+                sb.append(String.format("   • Distance %2d -> %-8s : %s\n", p.second, p.first.getCode(), p.first.getTitle()));
             }
+            typoOutput.setText(sb.toString());
+        };
 
-            dpArea.setText(sb.toString());
+        btnRunTypo.addActionListener(runTypoLogic);
+        typoInput.addActionListener(runTypoLogic);
+
+        // --- Card 3: Matrix Chain Multiplication ---
+        JPanel mcmPanel = new JPanel(new BorderLayout(14, 14));
+        mcmPanel.setBackground(BG_CARD);
+        mcmPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(16, 20, 16, 20)
+        ));
+
+        JTextArea mcmOutput = new JTextArea();
+        mcmOutput.setFont(new Font("Consolas", Font.PLAIN, 13));
+        mcmOutput.setEditable(false);
+        mcmOutput.setBackground(BG_CARD_ALT);
+        mcmOutput.setForeground(TEXT_MAIN);
+
+        MatrixChainMult.McmResult mcm = analyticsService.optimizeAnalyticsPipeline();
+        StringBuilder mcmSb = new StringBuilder();
+        mcmSb.append("================================================================================\n");
+        mcmSb.append("         MATRIX-CHAIN MULTIPLICATION (MCM) O(N^3) OPTIMIZATION\n");
+        mcmSb.append("================================================================================\n\n");
+        mcmSb.append("Optimizing sequence of university data transformation matrices:\n\n");
+        mcmSb.append("• Minimum Scalar Multiplications : ").append(mcm.minMultiplications).append(" operations\n");
+        mcmSb.append("• Optimal Parenthesization Tree  : ").append(mcm.optimalOrder).append("\n\n");
+        mcmSb.append("Algorithmic Significance:\n");
+        mcmSb.append("By solving dynamic programming recurrence m[i,j] = min_{k} (m[i,k] + m[k+1,j] + p_{i-1} p_k p_j),\n");
+        mcmSb.append("EduTrack avoids exponential combinatorial matrix multiplication costs during batch academic analytics.\n");
+        mcmOutput.setText(mcmSb.toString());
+
+        mcmPanel.add(new JScrollPane(mcmOutput), BorderLayout.CENTER);
+
+        // --- Card 4: Optimal BST ---
+        JPanel obstPanel = new JPanel(new BorderLayout(14, 14));
+        obstPanel.setBackground(BG_CARD);
+        obstPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(16, 20, 16, 20)
+        ));
+
+        JTextArea obstOutput = new JTextArea();
+        obstOutput.setFont(new Font("Consolas", Font.PLAIN, 13));
+        obstOutput.setEditable(false);
+        obstOutput.setBackground(BG_CARD_ALT);
+        obstOutput.setForeground(TEXT_MAIN);
+
+        OptimalBST.ObstResult obst = analyticsService.buildOptimalSearchTree();
+        StringBuilder obstSb = new StringBuilder();
+        obstSb.append("================================================================================\n");
+        obstSb.append("           OPTIMAL BINARY SEARCH TREE (OBST) O(N^3) DP SOLVER\n");
+        obstSb.append("================================================================================\n\n");
+        obstSb.append("Minimizes expected academic search depth for non-uniform course access frequencies:\n\n");
+        obstSb.append("• Expected Optimal Search Cost (Weighted Depth): ").append(String.format("%.4f", obst.expectedCost)).append("\n\n");
+        obstSb.append("• Optimal Search Tree Root Organization Hierarchy:\n");
+        obstSb.append(obst.printTree()).append("\n");
+        obstOutput.setText(obstSb.toString());
+
+        obstPanel.add(new JScrollPane(obstOutput), BorderLayout.CENTER);
+
+        // Add all sub-cards
+        dpCardsContainer.add(tspPanel, "TSP");
+        dpCardsContainer.add(typoPanel, "TYPO");
+        dpCardsContainer.add(mcmPanel, "MCM");
+        dpCardsContainer.add(obstPanel, "OBST");
+
+        // Top Algorithm Switcher Navigation Bar
+        JPanel navBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        navBar.setBackground(BG_CARD);
+        navBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
+
+        ModernButton navTSP = new ModernButton("Traveling Academic Auditor (2D Map TSP)", ACCENT_SKIN, TEXT_DARK);
+        ModernButton navTypo = new ModernButton("Levenshtein & Damerau Typo Correction", BG_CARD_LIGHTER, TEXT_MAIN);
+        ModernButton navMCM = new ModernButton("Matrix-Chain Mult (MCM)", BG_CARD_LIGHTER, TEXT_MAIN);
+        ModernButton navOBST = new ModernButton("Optimal BST (OBST)", BG_CARD_LIGHTER, TEXT_MAIN);
+
+        navTSP.addActionListener(e -> {
+            dpCardLayout.show(dpCardsContainer, "TSP");
+            navTSP.setCustomColors(ACCENT_SKIN, TEXT_DARK);
+            navTypo.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navMCM.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navOBST.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
         });
 
-        btnMCM.addActionListener(e -> {
-            MatrixChainMult.McmResult mcm = analyticsService.optimizeAnalyticsPipeline();
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Matrix-Chain Multiplication (O(N^3) DP) ===\n");
-            sb.append("Optimizing sequence of university data transformation matrices:\n\n");
-            sb.append("• Minimum Scalar Multiplications : ").append(mcm.minMultiplications).append("\n");
-            sb.append("• Optimal Parenthesization Order : ").append(mcm.optimalOrder).append("\n\n");
-            sb.append("Avoids exponential combinatorial multiplication costs during batch academic analytics.\n");
-            dpArea.setText(sb.toString());
+        navTypo.addActionListener(e -> {
+            dpCardLayout.show(dpCardsContainer, "TYPO");
+            runTypoLogic.actionPerformed(null);
+            navTSP.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navTypo.setCustomColors(ACCENT_PEACH, TEXT_DARK);
+            navMCM.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navOBST.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
         });
 
-        btnTSP.addActionListener(e -> {
-            BitmaskDP.TourResult tour = analyticsService.planAuditorTour();
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Bitmask Dynamic Programming: Traveling Academic Auditor ===\n");
-            sb.append("Time Complexity: O(2^N * N^2) | State Space: bitmask subset of visited departments\n\n");
-            sb.append("• Minimum Transit Cost: ").append(tour.minCost).append(" minutes\n");
-            sb.append("• Optimal Campus Tour : ");
-            String[] depts = {"Computer Science", "Artificial Intelligence", "Data Science", "Mathematics", "Electronics", "Cybersecurity"};
-            for (int i = 0; i < tour.path.size(); i++) {
-                int node = tour.path.get(i);
-                sb.append(depts[node]);
-                if (i + 1 < tour.path.size()) sb.append(" ───> ");
-            }
-            sb.append("\n");
-            dpArea.setText(sb.toString());
+        navMCM.addActionListener(e -> {
+            dpCardLayout.show(dpCardsContainer, "MCM");
+            navTSP.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navTypo.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navMCM.setCustomColors(ACCENT_CREAM, TEXT_DARK);
+            navOBST.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
         });
 
-        btnOBST.addActionListener(e -> {
-            OptimalBST.ObstResult obst = analyticsService.buildOptimalSearchTree();
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Optimal Binary Search Tree (OBST) in O(N^3) ===\n");
-            sb.append("Minimizes expected query search depth for non-uniform access frequencies:\n\n");
-            sb.append("• Expected Optimal Search Cost: ").append(String.format("%.4f", obst.expectedCost)).append("\n");
-            sb.append("• Tree Root Organization:\n");
-            sb.append(obst.printTree());
-            dpArea.setText(sb.toString());
+        navOBST.addActionListener(e -> {
+            dpCardLayout.show(dpCardsContainer, "OBST");
+            navTSP.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navTypo.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navMCM.setCustomColors(BG_CARD_LIGHTER, TEXT_MAIN);
+            navOBST.setCustomColors(ACCENT_GREEN, TEXT_DARK);
         });
+
+        navBar.add(navTSP);
+        navBar.add(navTypo);
+        navBar.add(navMCM);
+        navBar.add(navOBST);
+
+        panel.add(navBar, BorderLayout.NORTH);
+        panel.add(dpCardsContainer, BorderLayout.CENTER);
+
+        // Auto plan tour and initialize canvas
+        SwingUtilities.invokeLater(() -> btnPlan.doClick());
 
         return panel;
     }
@@ -793,18 +1517,14 @@ public class EduTrackGUI extends JFrame {
 
         JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JButton btnBipartite = new JButton("Solve Faculty Bipartite Matching");
-        btnBipartite.setBackground(ACCENT_BLUE);
-        btnBipartite.setForeground(Color.WHITE);
-
-        JButton btnFlowCompare = new JButton("Dinic Lab Flow Network");
-        btnFlowCompare.setBackground(ACCENT_AMBER);
-        btnFlowCompare.setForeground(Color.WHITE);
-
-        JButton btnKonig = new JButton("König's Theorem Conflict Bottleneck");
-        btnKonig.setBackground(ACCENT_GREEN);
-        btnKonig.setForeground(Color.WHITE);
+        ModernButton btnBipartite = new ModernButton("Solve Faculty Bipartite Matching", ACCENT_BLUE, TEXT_DARK);
+        ModernButton btnFlowCompare = new ModernButton("Dinic Lab Flow Network", ACCENT_SKIN, TEXT_DARK);
+        ModernButton btnKonig = new ModernButton("König's Theorem Conflict Bottleneck", ACCENT_GREEN, TEXT_DARK);
 
         topControls.add(btnBipartite);
         topControls.add(btnFlowCompare);
@@ -818,8 +1538,8 @@ public class EduTrackGUI extends JFrame {
         JTextArea flowArea = new JTextArea();
         flowArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         flowArea.setEditable(false);
-        flowArea.setBackground(new Color(15, 23, 42));
-        flowArea.setForeground(new Color(226, 232, 240));
+        flowArea.setBackground(BG_CARD_ALT);
+        flowArea.setForeground(TEXT_MAIN);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, graphPanel, new JScrollPane(flowArea));
         splitPane.setDividerLocation(620);
@@ -857,18 +1577,14 @@ public class EduTrackGUI extends JFrame {
 
         JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JButton btnSAT = new JButton("Run DPLL SAT Solver (Exam Timetable)");
-        btnSAT.setBackground(ACCENT_BLUE);
-        btnSAT.setForeground(Color.WHITE);
-
-        JButton btnKarp = new JButton("Demonstrate 3-SAT -> CLIQUE -> IS -> VC");
-        btnKarp.setBackground(new Color(139, 92, 246));
-        btnKarp.setForeground(Color.WHITE);
-
-        JButton btnApprox = new JButton("Vertex Cover 2-Approximation (Proctors)");
-        btnApprox.setBackground(ACCENT_GREEN);
-        btnApprox.setForeground(Color.WHITE);
+        ModernButton btnSAT = new ModernButton("Run DPLL SAT Solver (Exam Timetable)", ACCENT_BLUE, TEXT_DARK);
+        ModernButton btnKarp = new ModernButton("Demonstrate 3-SAT -> CLIQUE -> IS -> VC", ACCENT_PURPLE, TEXT_DARK);
+        ModernButton btnApprox = new ModernButton("Vertex Cover 2-Approximation (Proctors)", ACCENT_SKIN, TEXT_DARK);
 
         topControls.add(btnSAT);
         topControls.add(btnKarp);
@@ -882,8 +1598,8 @@ public class EduTrackGUI extends JFrame {
         JTextArea npArea = new JTextArea();
         npArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         npArea.setEditable(false);
-        npArea.setBackground(new Color(15, 23, 42));
-        npArea.setForeground(new Color(226, 232, 240));
+        npArea.setBackground(BG_CARD_ALT);
+        npArea.setForeground(TEXT_MAIN);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, graphPanel, new JScrollPane(npArea));
         splitPane.setDividerLocation(620);
@@ -918,7 +1634,7 @@ public class EduTrackGUI extends JFrame {
             sb.append("Proctored Courses (Gold Nodes ★ in 2D Visualizer):\n");
             for (int i = 0; i < approx.coverVertices.size(); i++) {
                 sb.append(" • ").append(courses.get(approx.coverVertices.get(i)).getCode()).append(" (")
-                  .append(courses.get(approx.coverVertices.get(i)).getTitle()).append(")\n");
+                        .append(courses.get(approx.coverVertices.get(i)).getTitle()).append(")\n");
             }
             sb.append("\nNotice in the 2D visual canvas: every conflict edge touches at least one glowing proctor node!\n");
             npArea.setText(sb.toString());
@@ -935,15 +1651,19 @@ public class EduTrackGUI extends JFrame {
         panel.setBackground(BG_DARK);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JButton btnRank = new JButton("Randomized QuickSort Ranking");
-        JButton btnReservoir = new JButton("Reservoir Sampling (k=5)");
-        JButton btnPrime = new JButton("Miller-Rabin Token Generator");
-        JButton btnBlelloch = new JButton("Blelloch Parallel Scan");
-        JButton btnReduce = new JButton("Parallel Reduce GPA");
-        JButton btnBrent = new JButton("Brent's Theorem Modeler");
+        ModernButton btnRank = new ModernButton("Randomized QuickSort Ranking", ACCENT_BLUE, TEXT_DARK);
+        ModernButton btnReservoir = new ModernButton("Reservoir Sampling (k=5)", ACCENT_GREEN, TEXT_DARK);
+        ModernButton btnPrime = new ModernButton("Miller-Rabin Token Generator", ACCENT_PURPLE, TEXT_DARK);
+        ModernButton btnBlelloch = new ModernButton("Blelloch Parallel Scan", ACCENT_SKIN, TEXT_DARK);
+        ModernButton btnReduce = new ModernButton("Parallel Reduce GPA", ACCENT_PEACH, TEXT_DARK);
+        ModernButton btnBrent = new ModernButton("Brent's Theorem Modeler", BG_CARD_LIGHTER, TEXT_MAIN);
 
         topControls.add(btnRank);
         topControls.add(btnReservoir);
@@ -957,8 +1677,8 @@ public class EduTrackGUI extends JFrame {
         JTextArea prArea = new JTextArea();
         prArea.setFont(new Font("Consolas", Font.PLAIN, 13));
         prArea.setEditable(false);
-        prArea.setBackground(new Color(15, 23, 42));
-        prArea.setForeground(new Color(226, 232, 240));
+        prArea.setBackground(BG_CARD_ALT);
+        prArea.setForeground(TEXT_MAIN);
         panel.add(new JScrollPane(prArea), BorderLayout.CENTER);
 
         btnRank.addActionListener(e -> {
@@ -1038,16 +1758,13 @@ public class EduTrackGUI extends JFrame {
 
         JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
-        JButton btnRunReview1 = new JButton("Run Review 1 Verification (CO1 – CO3: 10 Algos)");
-        btnRunReview1.setBackground(ACCENT_GREEN);
-        btnRunReview1.setForeground(Color.WHITE);
-        btnRunReview1.setFont(new Font("Segoe UI", Font.BOLD, 13));
-
-        JButton btnRunAll = new JButton("Run Full 16-Algorithm Suite (All Modules)");
-        btnRunAll.setBackground(new Color(59, 130, 246));
-        btnRunAll.setForeground(Color.WHITE);
-        btnRunAll.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        ModernButton btnRunReview1 = new ModernButton("Run Review 1 Verification (CO1 – CO3: 10 Algos)", ACCENT_GREEN, TEXT_DARK);
+        ModernButton btnRunAll = new ModernButton("Run Full 16-Algorithm Suite (All Modules)", ACCENT_SKIN, TEXT_DARK);
 
         topControls.add(btnRunReview1);
         topControls.add(btnRunAll);
@@ -1056,8 +1773,8 @@ public class EduTrackGUI extends JFrame {
         String[] cols = {"#", "Algorithm Family", "Syllabus Module", "Test Case Description", "Status", "Latency"};
         DefaultTableModel model = new DefaultTableModel(cols, 0);
         JTable table = new JTable(model);
-        table.setRowHeight(28);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        styleTable(table);
+
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
         btnRunReview1.addActionListener(e -> {
@@ -1083,10 +1800,14 @@ public class EduTrackGUI extends JFrame {
 
         JPanel topControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         topControls.setBackground(BG_CARD);
+        topControls.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
 
         JLabel lblMatchup = new JLabel("Matchup:");
         lblMatchup.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblMatchup.setForeground(Color.WHITE);
+        lblMatchup.setForeground(ACCENT_SKIN);
 
         String[] matchups = {
                 "1. String Search: KMP vs Z-Algo vs Rabin-Karp vs Naive",
@@ -1100,17 +1821,14 @@ public class EduTrackGUI extends JFrame {
 
         JLabel lblScale = new JLabel("Scale:");
         lblScale.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblScale.setForeground(Color.WHITE);
+        lblScale.setForeground(ACCENT_SKIN);
 
         String[] scales = {"Small (10K units)", "Medium (40K units)", "Large (100K units)"};
         JComboBox<String> comboScale = new JComboBox<>(scales);
         comboScale.setSelectedIndex(1);
         comboScale.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
-        JButton btnRace = new JButton("⚡ START ALGORITHM RACE");
-        btnRace.setBackground(ACCENT_GREEN);
-        btnRace.setForeground(Color.WHITE);
-        btnRace.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        ModernButton btnRace = new ModernButton("START ALGORITHM RACE", ACCENT_SKIN, TEXT_DARK);
 
         JProgressBar progressBar = new JProgressBar();
         progressBar.setPreferredSize(new Dimension(140, 22));
@@ -1130,8 +1848,8 @@ public class EduTrackGUI extends JFrame {
         JTextArea telemetryArea = new JTextArea();
         telemetryArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         telemetryArea.setEditable(false);
-        telemetryArea.setBackground(new Color(15, 23, 42));
-        telemetryArea.setForeground(new Color(226, 232, 240));
+        telemetryArea.setBackground(BG_CARD_ALT);
+        telemetryArea.setForeground(TEXT_MAIN);
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, chartPanel, new JScrollPane(telemetryArea));
         split.setDividerLocation(340);
@@ -1189,10 +1907,10 @@ public class EduTrackGUI extends JFrame {
                                     (i + 1), r.algorithmName, r.complexity, r.elapsedMicros, r.speedup, r.notes));
                         }
                         if (winner != null) {
-                            sb.append("\n🏆 VICTORY: ").append(winner.algorithmName)
-                              .append(" achieved peak throughput (").append(String.format("%.2f µs", winner.elapsedMicros))
-                              .append(") with speedup of ").append(String.format("%.1fx", winner.speedup))
-                              .append(" over baseline!\n");
+                            sb.append("\nVICTORY: ").append(winner.algorithmName)
+                                    .append(" achieved peak throughput (").append(String.format("%.2f µs", winner.elapsedMicros))
+                                    .append(") with speedup of ").append(String.format("%.1fx", winner.speedup))
+                                    .append(" over baseline!\n");
                         }
                         sb.append("================================================================================\n");
                         telemetryArea.setText(sb.toString());
@@ -1301,10 +2019,31 @@ public class EduTrackGUI extends JFrame {
         long elapsed = (System.nanoTime() - t1) / 1000;
 
         model.addRow(new Object[]{
-            id, name, module, desc,
-            pass ? "PASS" : "FAIL",
-            elapsed + " µs"
+                id, name, module, desc,
+                pass ? "PASS" : "FAIL",
+                elapsed + " µs"
         });
+    }
+
+    private static void styleTable(JTable table) {
+        table.setBackground(BG_CARD_ALT);
+        table.setForeground(TEXT_MAIN);
+        table.setGridColor(BORDER_COLOR);
+        table.setRowHeight(28);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setSelectionBackground(new Color(245, 210, 165, 140));
+        table.setSelectionForeground(TEXT_DARK);
+
+        table.getTableHeader().setBackground(BG_CARD);
+        table.getTableHeader().setForeground(ACCENT_SKIN);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        if (table.getColumnCount() > 0) {
+            table.getColumnModel().getColumn(0).setPreferredWidth(45);
+        }
     }
 
     private static String printList(MyArrayList<Integer> list) {
@@ -1319,7 +2058,7 @@ public class EduTrackGUI extends JFrame {
     public static void main(String[] args) {
         String baseDir = "c:/DSA_3";
 
-        // Support non-interactive test flag
+        // Support non-interactive headless test flag
         if (args.length > 0 && "--test".equalsIgnoreCase(args[0])) {
             System.out.println("[EduTrackGUI] Initializing headless test...");
             EduTrackGUI gui = new EduTrackGUI(baseDir);
@@ -1331,7 +2070,8 @@ public class EduTrackGUI extends JFrame {
 
         SwingUtilities.invokeLater(() -> {
             try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                // Ensure consistent rendering across all platforms
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             } catch (Exception ignored) {}
             EduTrackGUI gui = new EduTrackGUI(baseDir);
             gui.setVisible(true);
