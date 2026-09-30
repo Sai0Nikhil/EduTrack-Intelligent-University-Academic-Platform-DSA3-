@@ -36,6 +36,21 @@ public class AcademicSearchService {
     }
 
     /**
+     * Searches course titles using Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Vector Matching).
+     */
+    public MyArrayList<Pair<Course, Integer>> searchCoursesByBittu(String query) {
+        MyArrayList<Pair<Course, Integer>> results = new MyArrayList<>();
+        for (int i = 0; i < courses.size(); i++) {
+            Course c = courses.get(i);
+            MyArrayList<Integer> matches = edutrack.algorithms.strings.BittuAlgorithm.search(c.getTitle(), query);
+            if (!matches.isEmpty()) {
+                results.add(new Pair<>(c, matches.size()));
+            }
+        }
+        return results;
+    }
+
+    /**
      * Searches course codes using Rabin-Karp rolling hash.
      */
     public MyArrayList<Course> searchCodeByRabinKarp(String codeQuery) {

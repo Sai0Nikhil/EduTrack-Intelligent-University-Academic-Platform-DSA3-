@@ -120,6 +120,13 @@ public class BenchmarkArenaService {
         long timeKmp = Math.max(1, System.nanoTime() - start);
         cat.results.add(new ArenaResult("Knuth-Morris-Pratt (KMP)", "O(N + M)", timeKmp, n + m, "Prefix failure function π with zero text backtracking"));
 
+        // 5. Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Vector Matching)
+        start = System.nanoTime();
+        edutrack.algorithms.strings.BittuAlgorithm.SearchResult bittuRes = edutrack.algorithms.strings.BittuAlgorithm.searchWithTelemetry(text, pattern);
+        long timeBittu = Math.max(1, System.nanoTime() - start);
+        cat.results.add(new ArenaResult("✨ Bittu's Algorithm (Invention)", "O(N + M) avg", timeBittu, bittuRes.totalWindowsExamined,
+                "Rolling bigram cosine angle filter with O(1) delta updates & flat primitive cache"));
+
         computeSpeedups(cat.results);
         return cat;
     }

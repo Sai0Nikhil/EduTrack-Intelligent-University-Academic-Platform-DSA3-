@@ -325,7 +325,8 @@ public class EduTrackCLI {
         System.out.println("  2. Z-Algorithm Repeated Phrase Detection in Submissions");
         System.out.println("  3. Rabin-Karp Rolling Hash Course Code Lookup");
         System.out.println("  4. Aho-Corasick Simultaneous Academic Keyword Tagger");
-        System.out.print("Select an option (1-4): ");
+        System.out.println("  5. ✨ Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Matcher)");
+        System.out.print("Select an option (1-5): ");
         String opt = readLineSafe();
 
         switch (opt) {
@@ -338,6 +339,18 @@ public class EduTrackCLI {
                 for (int i = 0; i < results.size(); i++) {
                     Pair<Course, Integer> p = results.get(i);
                     System.out.println("  [" + (i + 1) + "] " + p.first + " (Occurrences: " + p.second + ")");
+                }
+                break;
+            }
+            case "5": {
+                System.out.print("Enter search keyword for Bittu's Algorithm (e.g., 'Algorithm', 'Data'): ");
+                String query = readLineSafe();
+                if (query.isEmpty()) query = "Algorithm";
+                MyArrayList<Pair<Course, Integer>> results = searchService.searchCoursesByBittu(query);
+                System.out.println("\n✨ Bittu's Algorithm Cosine-Filter Search Results for \"" + query + "\" (" + results.size() + " matches):");
+                for (int i = 0; i < results.size(); i++) {
+                    Pair<Course, Integer> p = results.get(i);
+                    System.out.println("  [" + (i + 1) + "] " + p.first + " (Matches: " + p.second + ", cos=1.000000)");
                 }
                 break;
             }

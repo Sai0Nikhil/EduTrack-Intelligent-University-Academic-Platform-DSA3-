@@ -15,6 +15,7 @@ import edutrack.algorithms.parallel_random.MillerRabin;
 import edutrack.algorithms.parallel_random.ParallelReduce;
 import edutrack.algorithms.parallel_random.RandomizedQuickSort;
 import edutrack.algorithms.strings.AhoCorasick;
+import edutrack.algorithms.strings.BittuAlgorithm;
 import edutrack.algorithms.strings.KmpMatcher;
 import edutrack.algorithms.strings.RabinKarp;
 import edutrack.algorithms.strings.ZAlgorithm;
@@ -728,14 +729,16 @@ public class EduTrackGUI extends JFrame {
         JRadioButton rZ = new JRadioButton("Z-Algorithm");
         JRadioButton rRk = new JRadioButton("Rabin-Karp Rolling Hash");
         JRadioButton rAc = new JRadioButton("Aho-Corasick Dictionary");
+        JRadioButton rBittu = new JRadioButton("✨ Bittu's Algorithm (Invention)");
 
         rKmp.setForeground(TEXT_MAIN); rKmp.setFont(new Font("Segoe UI", Font.BOLD, 12)); rKmp.setOpaque(false);
         rZ.setForeground(TEXT_MAIN); rZ.setFont(new Font("Segoe UI", Font.BOLD, 12)); rZ.setOpaque(false);
         rRk.setForeground(TEXT_MAIN); rRk.setFont(new Font("Segoe UI", Font.BOLD, 12)); rRk.setOpaque(false);
         rAc.setForeground(TEXT_MAIN); rAc.setFont(new Font("Segoe UI", Font.BOLD, 12)); rAc.setOpaque(false);
+        rBittu.setForeground(ACCENT_SKIN); rBittu.setFont(new Font("Segoe UI", Font.BOLD, 12)); rBittu.setOpaque(false);
 
         ButtonGroup group = new ButtonGroup();
-        group.add(rKmp); group.add(rZ); group.add(rRk); group.add(rAc);
+        group.add(rKmp); group.add(rZ); group.add(rRk); group.add(rAc); group.add(rBittu);
 
         ModernButton btnSearch = new ModernButton("Run Pattern Search", ACCENT_SKIN, TEXT_DARK);
 
@@ -745,6 +748,7 @@ public class EduTrackGUI extends JFrame {
         controlPanel.add(rZ);
         controlPanel.add(rRk);
         controlPanel.add(rAc);
+        controlPanel.add(rBittu);
         controlPanel.add(btnSearch);
 
         panel.add(controlPanel, BorderLayout.NORTH);
@@ -983,6 +987,64 @@ public class EduTrackGUI extends JFrame {
 
                 sb.append("=== Aho-Corasick Dictionary Matcher ===\n");
                 sb.append("Total occurrences across Algorithms Handbook: ").append(acMatches.size()).append("\n");
+
+            } else if (rBittu.isSelected()) {
+                piHeader.setText("✨ BITTU'S ALGORITHM (ROLLING BIGRAM COSINE FILTER) FOR \"" + q + "\":");
+                explanationLabel.setText("<html><span style='color:#cbd5e1; font-size:11px;'>" +
+                        "<b>Bittu's Innovation Theorem:</b> Maps pattern & sliding window into a 65,536-dimensional frequency vector. " +
+                        "Updates <code>cos(θ) = (W · P)/(||W||·||P||)</code> in <b>O(1) time</b> per shift using flat primitive tables with zero memory allocation.</span></html>");
+
+                int[] counts = BittuAlgorithm.computeBigramCounts(q);
+                int shown = 0;
+                for (int i = 0; i + 1 < q.length() && shown < 8; i++) {
+                    char c1 = q.charAt(i);
+                    char c2 = q.charAt(i + 1);
+                    int k = BittuAlgorithm.key(c1, c2);
+                    int cnt = counts[k];
+                    shown++;
+
+                    JPanel tile = new JPanel(new GridLayout(3, 1, 0, 2));
+                    tile.setPreferredSize(new Dimension(56, 62));
+                    tile.setBackground(BG_CARD_LIGHTER);
+                    tile.setBorder(BorderFactory.createLineBorder(ACCENT_SKIN, 1));
+
+                    JLabel charLbl = new JLabel("'" + c1 + c2 + "'", SwingConstants.CENTER);
+                    charLbl.setFont(new Font("Consolas", Font.BOLD, 13));
+                    charLbl.setForeground(ACCENT_SKIN);
+
+                    JLabel idxLbl = new JLabel("k=" + k, SwingConstants.CENTER);
+                    idxLbl.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+                    idxLbl.setForeground(TEXT_MUTED);
+
+                    JLabel valLbl = new JLabel("cnt=" + cnt, SwingConstants.CENTER);
+                    valLbl.setFont(new Font("Consolas", Font.BOLD, 12));
+                    valLbl.setForeground(ACCENT_GREEN);
+
+                    tile.add(charLbl);
+                    tile.add(idxLbl);
+                    tile.add(valLbl);
+                    piTilesPanel.add(tile);
+                }
+
+                int totalMatches = 0;
+                for (int i = 0; i < courses.size(); i++) {
+                    Course c = courses.get(i);
+                    BittuAlgorithm.SearchResult r = BittuAlgorithm.searchWithTelemetry(c.getTitle(), q);
+                    if (!r.matchPositions.isEmpty()) {
+                        totalMatches++;
+                        matchModel.addRow(new Object[]{
+                                totalMatches, c.getCode(), c.getTitle(), c.getDepartment(),
+                                r.matchPositions.size(), printList(r.matchPositions) + " (cos=1.0000)"
+                        });
+                    }
+                }
+
+                sb.append("=== ✨ Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Matcher) ===\n");
+                sb.append("Pattern           : \"").append(q).append("\" (Length: ").append(q.length()).append(")\n");
+                sb.append("Vector Space      : 65,536-dimensional Bigram Embedding R^{256x256}\n");
+                sb.append("Complexity        : Preprocessing O(M), Window Shift O(1) delta algebra, Expected O(N + M)\n");
+                sb.append("Screening Method  : cos(θ) >= 0.999999999 candidate filter with flat int[] primitive indexing\n");
+                sb.append("Courses matched   : ").append(totalMatches).append("\n");
             }
 
             long elapsed = (System.nanoTime() - start) / 1000;
@@ -1952,29 +2014,32 @@ public class EduTrackGUI extends JFrame {
                     return ac.search("ushers").size() == 2;
                 });
 
-        addBenchmarkRow(model, 5, "Suffix Array O(N log^2 N)", "Module 2 (CO2)", "Sorted suffix array & binary substring lookup",
+        addBenchmarkRow(model, 5, "✨ Bittu's Algorithm", "Invention (CO1)", "Rolling bigram vector space cosine angle filter",
+                () -> BittuAlgorithm.search("algorithms and algorithmic analysis", "algorithm").size() == 2);
+
+        addBenchmarkRow(model, 6, "Suffix Array O(N log^2 N)", "Module 2 (CO2)", "Sorted suffix array & binary substring lookup",
                 () -> new SuffixArray("banana").searchPattern("nan") >= 0);
 
-        addBenchmarkRow(model, 6, "Kasai's LCP Array", "Module 2 (CO2)", "O(N) Longest Common Prefix calculation",
+        addBenchmarkRow(model, 7, "Kasai's LCP Array", "Module 2 (CO2)", "O(N) Longest Common Prefix calculation",
                 () -> KasaiLCP.computeLCP("banana", new SuffixArray("banana").getSuffixArray()).length == 6);
 
-        addBenchmarkRow(model, 7, "Suffix Automaton", "Module 2 (CO2)", "Minimal state machine O(N) substring queries",
+        addBenchmarkRow(model, 8, "Suffix Automaton", "Module 2 (CO2)", "Minimal state machine O(N) substring queries",
                 () -> new SuffixAutomaton("algorithms").containsSubstring("rithm"));
 
-        addBenchmarkRow(model, 8, "Levenshtein Edit Distance", "Module 3 (CO3)", "Wagner-Fischer 2D dynamic programming table",
+        addBenchmarkRow(model, 9, "Levenshtein Edit Distance", "Module 3 (CO3)", "Wagner-Fischer 2D dynamic programming table",
                 () -> Levenshtein.computeDistance("kitten", "sitting") == 3);
 
-        addBenchmarkRow(model, 9, "Damerau-Levenshtein", "Module 3 (CO3)", "Adjacent transposition optimal alignment",
+        addBenchmarkRow(model, 10, "Damerau-Levenshtein", "Module 3 (CO3)", "Adjacent transposition optimal alignment",
                 () -> DamerauLevenshtein.computeDistance("CS102", "SC102") == 1);
 
-        addBenchmarkRow(model, 10, "Matrix-Chain Mult (MCM)", "Module 3 (CO3)", "O(N^3) optimal parenthesization order",
+        addBenchmarkRow(model, 11, "Matrix-Chain Mult (MCM)", "Module 3 (CO3)", "O(N^3) optimal parenthesization order",
                 () -> MatrixChainMult.solve(new int[]{10, 30, 5, 60}, null).minMultiplications == 4500);
 
         if (review1Only) {
             return;
         }
 
-        addBenchmarkRow(model, 11, "Network Flow (Dinic)", "Module 4 (CO4)", "BFS level graph and blocking flow max-flow",
+        addBenchmarkRow(model, 12, "Network Flow (Dinic)", "Module 4 (CO4)", "BFS level graph and blocking flow max-flow",
                 () -> {
                     edutrack.algorithms.flow.FlowNetwork net = new edutrack.algorithms.flow.FlowNetwork(4);
                     net.addEdge(0, 1, 10); net.addEdge(0, 2, 5); net.addEdge(1, 2, 15);
@@ -1982,27 +2047,27 @@ public class EduTrackGUI extends JFrame {
                     return edutrack.algorithms.flow.DinicsAlgorithm.maxFlow(net, 0, 3) == 15;
                 });
 
-        addBenchmarkRow(model, 12, "DPLL SAT Solver", "Module 5 (CO5)", "Exam timetable constraint satisfaction in CNF",
+        addBenchmarkRow(model, 13, "DPLL SAT Solver", "Module 5 (CO5)", "Exam timetable constraint satisfaction in CNF",
                 () -> {
                     MyArrayList<DpllSatSolver.Clause> cl = new MyArrayList<>();
                     cl.add(new DpllSatSolver.Clause(1, 2)); cl.add(new DpllSatSolver.Clause(-1, 2));
                     return DpllSatSolver.solve(cl, 2).isSatisfiable;
                 });
 
-        addBenchmarkRow(model, 13, "Vertex Cover 2-Approx", "Module 5 (CO5)", "Maximal matching 2*OPT factor guarantee",
+        addBenchmarkRow(model, 14, "Vertex Cover 2-Approx", "Module 5 (CO5)", "Maximal matching 2*OPT factor guarantee",
                 () -> {
                     MyArrayList<Pair<Integer, Integer>> edges = new MyArrayList<>();
                     edges.add(new Pair<>(0, 1)); edges.add(new Pair<>(1, 2));
                     return VertexCover2Approx.approximateCover(3, edges).approxCoverSize <= 4;
                 });
 
-        addBenchmarkRow(model, 14, "Miller-Rabin Primality", "Module 6 (CO6)", "Deterministic & probabilistic prime witnesses",
+        addBenchmarkRow(model, 15, "Miller-Rabin Primality", "Module 6 (CO6)", "Deterministic & probabilistic prime witnesses",
                 () -> MillerRabin.isPrime(1000000007L) && !MillerRabin.isPrime(1000000005L));
 
-        addBenchmarkRow(model, 15, "Blelloch Parallel Scan", "Module 6 (CO6)", "Work-efficient prefix sum equality",
+        addBenchmarkRow(model, 16, "Blelloch Parallel Scan", "Module 6 (CO6)", "Work-efficient prefix sum equality",
                 () -> BlellochScan.inclusiveScan(new long[]{1, 2, 3, 4, 5, 6, 7, 8})[7] == 36);
 
-        addBenchmarkRow(model, 16, "Brent's Theorem Modeler", "Module 6 (CO6)", "Analytical speedup bounds T_P <= (T1-T_inf)/P + T_inf",
+        addBenchmarkRow(model, 17, "Brent's Theorem Modeler", "Module 6 (CO6)", "Analytical speedup bounds T_P <= (T1-T_inf)/P + T_inf",
                 () -> BrentsTheorem.analyze(1000, 10, 4).expectedSpeedup > 1.0);
     }
 
