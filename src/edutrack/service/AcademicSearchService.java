@@ -78,32 +78,132 @@ public class AcademicSearchService {
     }
 
     /**
-     * Suggests closest course titles using Levenshtein distance.
+     * Suggests closest course titles using Levenshtein distance (checking full title and individual words).
      */
     public MyArrayList<Pair<Course, Integer>> suggestTypoLevenshtein(String query, int maxDistance) {
         MyArrayList<Pair<Course, Integer>> suggestions = new MyArrayList<>();
+        if (query == null || query.trim().isEmpty()) return suggestions;
+        String qLower = query.toLowerCase().trim();
+
         for (int i = 0; i < courses.size(); i++) {
             Course c = courses.get(i);
-            int dist = Levenshtein.computeDistance(query.toLowerCase(), c.getTitle().toLowerCase());
-            if (dist <= maxDistance) {
-                suggestions.add(new Pair<>(c, dist));
+            int bestDist = Levenshtein.computeDistance(qLower, c.getTitle().toLowerCase());
+            String[] words = c.getTitle().split("\\s+");
+            for (String w : words) {
+                if (!w.isEmpty()) {
+                    int d = Levenshtein.computeDistance(qLower, w.toLowerCase());
+                    if (d < bestDist) {
+                        bestDist = d;
+                    }
+                }
+            }
+            if (bestDist <= maxDistance) {
+                suggestions.add(new Pair<>(c, bestDist));
+            }
+        }
+
+        // Sort suggestions by distance ascending (Zero-java.util in-place sort)
+        for (int i = 0; i < suggestions.size(); i++) {
+            for (int j = i + 1; j < suggestions.size(); j++) {
+                if (suggestions.get(j).second < suggestions.get(i).second) {
+                    Pair<Course, Integer> temp = suggestions.get(i);
+                    suggestions.set(i, suggestions.get(j));
+                    suggestions.set(j, temp);
+                }
             }
         }
         return suggestions;
     }
 
     /**
-     * Suggests course codes using Damerau-Levenshtein (transposition-aware).
+     * Suggests closest course codes using Damerau-Levenshtein distance (handles transpositions).
      */
-    public MyArrayList<Pair<Course, Integer>> suggestCourseCodeDamerau(String queryCode, int maxDistance) {
+    public MyArrayList<Pair<Course, Integer>> suggestCourseCodeDamerau(String query, int maxDistance) {
         MyArrayList<Pair<Course, Integer>> suggestions = new MyArrayList<>();
+        if (query == null || query.trim().isEmpty()) return suggestions;
+        String qUpper = query.toUpperCase().trim();
+
         for (int i = 0; i < courses.size(); i++) {
             Course c = courses.get(i);
-            int dist = DamerauLevenshtein.computeDistance(queryCode.toUpperCase(), c.getCode().toUpperCase());
+            int dist = DamerauLevenshtein.computeDistance(qUpper, c.getCode().toUpperCase());
             if (dist <= maxDistance) {
                 suggestions.add(new Pair<>(c, dist));
             }
         }
+
+        // Sort by distance ascending
+        for (int i = 0; i < suggestions.size(); i++) {
+            for (int j = i + 1; j < suggestions.size(); j++) {
+                if (suggestions.get(j).second < suggestions.get(i).second) {
+                    Pair<Course, Integer> temp = suggestions.get(i);
+                    suggestions.set(i, suggestions.get(j));
+                    suggestions.set(j, temp);
+                }
+            }
+        }
+        return suggestions;
+    }
+
+    /**
+     * Intelligent live auto-suggestion combining prefix matching, substring matching,
+     * and Levenshtein typo-tolerance for instant query completion.
+     */
+    public MyArrayList<String> autoSuggest(String query, int maxResults) {
+        MyArrayList<String> suggestions = new MyArrayList<>();
+        if (query == null || query.trim().isEmpty()) {
+            return suggestions;
+        }
+
+        String qLower = query.trim().toLowerCase();
+        String qUpper = query.trim().toUpperCase();
+
+        // 1. Exact Prefix matches on Course Code or Title
+        for (int i = 0; i < courses.size(); i++) {
+            Course c = courses.get(i);
+            if (c.getCode().toUpperCase().startsWith(qUpper) || c.getTitle().toLowerCase().startsWith(qLower)) {
+                String label = c.getCode() + " - " + c.getTitle();
+                if (!suggestions.contains(label)) {
+                    suggestions.add(label);
+                    if (suggestions.size() >= maxResults) return suggestions;
+                }
+            }
+        }
+
+        // 2. Substring matches
+        for (int i = 0; i < courses.size(); i++) {
+            Course c = courses.get(i);
+            if (c.getTitle().toLowerCase().contains(qLower) || c.getCode().toUpperCase().contains(qUpper)) {
+                String label = c.getCode() + " - " + c.getTitle();
+                if (!suggestions.contains(label)) {
+                    suggestions.add(label);
+                    if (suggestions.size() >= maxResults) return suggestions;
+                }
+            }
+        }
+
+        // 3. Typo-tolerant Levenshtein matches across words (edit distance <= 2)
+        for (int i = 0; i < courses.size(); i++) {
+            Course c = courses.get(i);
+            String[] words = c.getTitle().split("\\s+");
+            boolean match = false;
+            for (String w : words) {
+                if (w.length() >= 3 && Math.abs(w.length() - qLower.length()) <= 2) {
+                    int dist = Levenshtein.computeDistance(qLower, w.toLowerCase());
+                    if (dist <= 2) {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+            if (match) {
+                String label = c.getCode() + " - " + c.getTitle() + " (Did you mean?)";
+                if (!suggestions.contains(label)) {
+                    suggestions.add(label);
+                    if (suggestions.size() >= maxResults) return suggestions;
+                }
+            }
+        }
+
         return suggestions;
     }
 }

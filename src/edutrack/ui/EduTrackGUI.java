@@ -41,6 +41,8 @@ import edutrack.service.ResourceAllocationService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -59,7 +61,7 @@ import java.awt.event.MouseEvent;
  */
 public class EduTrackGUI extends JFrame {
 
-    public static boolean REVIEW_1_MODE = true;
+    public static boolean REVIEW_1_MODE = false;
 
     private final String baseDir;
     private final MyArrayList<Course> courses;
@@ -345,50 +347,12 @@ public class EduTrackGUI extends JFrame {
         tabbedPane.setForeground(TEXT_MAIN);
 
         tabbedPane.addTab("  Dashboard  ", createDashboardTab());
-        tabbedPane.addTab("  M1: String Search & KMP  ", createStringSearchTab());
-        tabbedPane.addTab("  M2: Suffix & Plagiarism Studio  ", createSuffixPlagiarismTab());
+        tabbedPane.addTab("  M1: String Search & Triage  ", createStringSearchTab());
+        tabbedPane.addTab("  M2: Suffix & Plagiarism  ", createSuffixPlagiarismTab());
         tabbedPane.addTab("  M3: Advanced DP & 2D Auditor  ", createDynamicProgrammingTab());
-
-        // CO4, CO5, CO6 gated for Review 1 with early-access demo previews
-        tabbedPane.addTab("  M4: Network Flow [Review 2]  ", createReviewGatedTab(
-                "CO4 / Module 4",
-                "Network Flow & Resource Allocation",
-                "Review 2 Milestone",
-                new String[]{
-                        "Dinic's Blocking Flow Algorithm O(V² E) with BFS Level Graphs",
-                        "Edmonds-Karp Shortest Augmenting Path Algorithm O(V E²)",
-                        "Maximum Bipartite Matching for Faculty-to-Course Assignment",
-                        "König's Min-Max Theorem for Minimum Vertex Cover Bottlenecks",
-                        "Interactive 2D Vector Flow Network Canvas Visualization"
-                },
-                createNetworkFlowTab()));
-
-        tabbedPane.addTab("  M5: NP-Reductions [Review 2]  ", createReviewGatedTab(
-                "CO5 / Module 5",
-                "NP-Completeness, Reductions & Approximation",
-                "Review 2 Milestone",
-                new String[]{
-                        "DPLL Boolean Satisfiability (SAT) Solver with Unit Propagation",
-                        "Karp Reductions Chain: 3-SAT → CLIQUE → Independent Set → Vertex Cover",
-                        "2-Approximation Algorithm for Minimum Vertex Cover (Maximal Matching)",
-                        "Interactive Exam Conflict Graph & Proctor Allocation Canvas"
-                },
-                createNPCompletenessTab()));
-
-        tabbedPane.addTab("  M6: Parallel & Random [Review 3]  ", createReviewGatedTab(
-                "CO6 / Module 6",
-                "Randomized & Parallel Algorithms",
-                "Review 3 Milestone (Final Review)",
-                new String[]{
-                        "Randomized QuickSort with Uniform Random Pivot Selection",
-                        "Reservoir Sampling (Algorithm R) for Infinite Activity Streams",
-                        "Miller-Rabin Probabilistic Primality Test for Student Cryptographic Tokens",
-                        "Blelloch Work-Efficient Parallel Prefix Scan (Up-sweep & Down-sweep)",
-                        "Multi-threaded Parallel Tree Reduction on Academic Records",
-                        "Brent's Work-Time Scheduling Principle & Theoretical Speedup Analyzer"
-                },
-                createParallelRandomTab()));
-
+        tabbedPane.addTab("  M4: Network Flow  ", createNetworkFlowTab());
+        tabbedPane.addTab("  M5: NP-Reductions  ", createNPCompletenessTab());
+        tabbedPane.addTab("  M6: Parallel & Random  ", createParallelRandomTab());
         tabbedPane.addTab("  Verification Suite  ", createBenchmarkTab());
         tabbedPane.addTab("  Benchmark Arena  ", createBenchmarkArenaTab());
 
@@ -703,13 +667,15 @@ public class EduTrackGUI extends JFrame {
         panel.setBackground(BG_DARK);
         panel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        // Top Search Controls Card
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 10));
+        JPanel controlPanel = new JPanel(new BorderLayout(8, 8));
         controlPanel.setBackground(BG_CARD);
         controlPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                new EmptyBorder(4, 10, 4, 10)
+                new EmptyBorder(8, 12, 8, 12)
         ));
+
+        JPanel inputRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 4));
+        inputRow.setOpaque(false);
 
         JLabel lbl = new JLabel("Search Query Pattern:");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -742,14 +708,60 @@ public class EduTrackGUI extends JFrame {
 
         ModernButton btnSearch = new ModernButton("Run Pattern Search", ACCENT_SKIN, TEXT_DARK);
 
-        controlPanel.add(lbl);
-        controlPanel.add(queryField);
-        controlPanel.add(rKmp);
-        controlPanel.add(rZ);
-        controlPanel.add(rRk);
-        controlPanel.add(rAc);
-        controlPanel.add(rBittu);
-        controlPanel.add(btnSearch);
+        inputRow.add(lbl);
+        inputRow.add(queryField);
+        inputRow.add(rKmp);
+        inputRow.add(rZ);
+        inputRow.add(rRk);
+        inputRow.add(rAc);
+        inputRow.add(rBittu);
+        inputRow.add(btnSearch);
+
+        // Live Auto-Suggestion chip row
+        JPanel autoSuggestRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
+        autoSuggestRow.setOpaque(false);
+        JLabel suggestPrompt = new JLabel("✨ Auto-Suggestions (Prefix & Typo-Tolerant):");
+        suggestPrompt.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        suggestPrompt.setForeground(ACCENT_SKIN);
+        autoSuggestRow.add(suggestPrompt);
+
+        Runnable updateSuggestions = () -> {
+            String txt = queryField.getText().trim();
+            autoSuggestRow.removeAll();
+            autoSuggestRow.add(suggestPrompt);
+            if (!txt.isEmpty()) {
+                MyArrayList<String> sugs = searchService.autoSuggest(txt, 4);
+                for (int i = 0; i < sugs.size(); i++) {
+                    String item = sugs.get(i);
+                    JButton pill = new JButton(item);
+                    pill.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                    pill.setBackground(BG_CARD_ALT);
+                    pill.setForeground(TEXT_MAIN);
+                    pill.setFocusPainted(false);
+                    pill.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(new Color(245, 210, 165, 140), 1),
+                            new EmptyBorder(2, 8, 2, 8)
+                    ));
+                    pill.addActionListener(ev -> {
+                        String clean = item.contains(" - ") ? item.substring(item.indexOf(" - ") + 3).replaceAll(" \\(Did you mean\\?\\)", "") : item;
+                        queryField.setText(clean);
+                        btnSearch.doClick();
+                    });
+                    autoSuggestRow.add(pill);
+                }
+            }
+            autoSuggestRow.revalidate();
+            autoSuggestRow.repaint();
+        };
+
+        queryField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { updateSuggestions.run(); }
+            public void removeUpdate(DocumentEvent e) { updateSuggestions.run(); }
+            public void changedUpdate(DocumentEvent e) { updateSuggestions.run(); }
+        });
+
+        controlPanel.add(inputRow, BorderLayout.NORTH);
+        controlPanel.add(autoSuggestRow, BorderLayout.SOUTH);
 
         panel.add(controlPanel, BorderLayout.NORTH);
 
@@ -1381,22 +1393,22 @@ public class EduTrackGUI extends JFrame {
         btnNext.addActionListener(e -> auditorCanvas.stepForward());
         btnReset.addActionListener(e -> auditorCanvas.reset());
 
-        // --- Card 2: Levenshtein & Damerau Typo Engine ---
+        // --- Card 2: Interactive 2D DP Matrix & Typo Engine ---
         JPanel typoPanel = new JPanel(new BorderLayout(14, 14));
         typoPanel.setBackground(BG_CARD);
         typoPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                new EmptyBorder(16, 20, 16, 20)
+                new EmptyBorder(14, 16, 14, 16)
         ));
 
         JPanel typoControlRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         typoControlRow.setOpaque(false);
 
-        JLabel typoLbl = new JLabel("Misspelled Academic Query / Code:");
+        JLabel typoLbl = new JLabel("Misspelled Query (s1):");
         typoLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         typoLbl.setForeground(ACCENT_SKIN);
 
-        JTextField typoInput = new JTextField("Operatng Systms", 18);
+        JTextField typoInput = new JTextField("Algoritm", 12);
         typoInput.setBackground(BG_CARD_ALT);
         typoInput.setForeground(TEXT_MAIN);
         typoInput.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -1405,47 +1417,47 @@ public class EduTrackGUI extends JFrame {
                 new EmptyBorder(4, 8, 4, 8)
         ));
 
-        ModernButton btnRunTypo = new ModernButton("Run DP Spell-Correction", ACCENT_PEACH, TEXT_DARK);
+        JLabel targetLbl = new JLabel("Target Term (s2):");
+        targetLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        targetLbl.setForeground(ACCENT_SKIN);
+
+        JTextField targetInput = new JTextField("Algorithm", 12);
+        targetInput.setBackground(BG_CARD_ALT);
+        targetInput.setForeground(TEXT_MAIN);
+        targetInput.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        targetInput.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+
+        ModernButton btnRunTypo = new ModernButton("Render 2D DP Matrix & Backtrace", ACCENT_PEACH, TEXT_DARK);
 
         typoControlRow.add(typoLbl);
         typoControlRow.add(typoInput);
+        typoControlRow.add(targetLbl);
+        typoControlRow.add(targetInput);
         typoControlRow.add(btnRunTypo);
 
-        JTextArea typoOutput = new JTextArea();
-        typoOutput.setFont(new Font("Consolas", Font.PLAIN, 13));
-        typoOutput.setEditable(false);
-        typoOutput.setBackground(BG_CARD_ALT);
-        typoOutput.setForeground(TEXT_MAIN);
+        DpMatrixVisualizerPanel dpVisualizer = new DpMatrixVisualizerPanel();
 
         typoPanel.add(typoControlRow, BorderLayout.NORTH);
-        typoPanel.add(new JScrollPane(typoOutput), BorderLayout.CENTER);
+        typoPanel.add(dpVisualizer, BorderLayout.CENTER);
 
         ActionListener runTypoLogic = e -> {
-            String q = typoInput.getText().trim();
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Wagner-Fischer 2D Dynamic Programming Edit Distance ===\n");
-            sb.append("Query: \"").append(q).append("\"\n\n");
-
-            sb.append("1. Levenshtein Distance (Insert, Delete, Substitute) Top Suggestions:\n");
-            MyArrayList<Pair<Course, Integer>> lev = searchService.suggestTypoLevenshtein(q, 10);
-            for (int i = 0; i < Math.min(6, lev.size()); i++) {
-                Pair<Course, Integer> p = lev.get(i);
-                sb.append(String.format("   [%d] Distance %2d -> %s (%s)\n", i + 1, p.second, p.first.getTitle(), p.first.getCode()));
-            }
-
-            sb.append("\n2. Damerau-Levenshtein Distance (Adjacent Transpositions Handled):\n");
-            String codeTypo = "SC201";
-            MyArrayList<Pair<Course, Integer>> dam = searchService.suggestCourseCodeDamerau(codeTypo, 2);
-            sb.append("   Transposed course code test: \"").append(codeTypo).append("\"\n");
-            for (int i = 0; i < dam.size(); i++) {
-                Pair<Course, Integer> p = dam.get(i);
-                sb.append(String.format("   • Distance %2d -> %-8s : %s\n", p.second, p.first.getCode(), p.first.getTitle()));
-            }
-            typoOutput.setText(sb.toString());
+            String s1 = typoInput.getText().trim();
+            String s2 = targetInput.getText().trim();
+            if (s1.isEmpty()) s1 = "Algoritm";
+            if (s2.isEmpty()) s2 = "Algorithm";
+            Levenshtein.DpTraceResult trace = Levenshtein.computeWithTrace(s1, s2);
+            dpVisualizer.displayTrace(trace);
         };
 
         btnRunTypo.addActionListener(runTypoLogic);
         typoInput.addActionListener(runTypoLogic);
+        targetInput.addActionListener(runTypoLogic);
+
+        // Initial visual trace render
+        runTypoLogic.actionPerformed(null);
 
         // --- Card 3: Matrix Chain Multiplication ---
         JPanel mcmPanel = new JPanel(new BorderLayout(14, 14));

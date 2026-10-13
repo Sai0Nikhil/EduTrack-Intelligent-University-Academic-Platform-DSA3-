@@ -9,7 +9,7 @@ if exist "C:\Program Files\Android\Android Studio\jbr\bin\javac.exe" (
     set "JAVA_CMD=C:\Program Files\Android\Android Studio\jbr\bin\java.exe"
 )
 
-echo [EduTrack] Compiling project for GUI...
+echo [EduTrack] Compiling project with !JAVAC_CMD!...
 if not exist bin mkdir bin
 
 dir /s /b src\*.java > sources.txt
@@ -21,6 +21,9 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 del sources.txt 2>nul
+echo [EduTrack] Compilation successful!
+echo [EduTrack] Launching EduTrack GUI...
+echo.
 
-echo [EduTrack] Launching EduTrack GUI Desktop Application...
-start "" "!JAVA_CMD!" -cp bin edutrack.ui.EduTrackGUI %*
+"!JAVA_CMD!" -cp bin Main --gui %*
+pause

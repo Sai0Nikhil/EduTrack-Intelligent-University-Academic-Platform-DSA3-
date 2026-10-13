@@ -25,5 +25,5 @@ echo [EduTrack] Compilation successful!
 echo [EduTrack] Launching EduTrack CLI...
 echo.
 
-"!JAVA_CMD!" -cp bin edutrack.ui.EduTrackCLI %*
+"!JAVA_CMD!" -cp bin Main --cli %*
 pause

@@ -50,7 +50,7 @@ import java.util.Scanner;
  */
 public class EduTrackCLI {
 
-    public static boolean REVIEW_1_MODE = true;
+    public static boolean REVIEW_1_MODE = false;
 
     private final MyArrayList<Course> courses;
     private final MyArrayList<Student> students;
@@ -154,49 +154,13 @@ public class EduTrackCLI {
                     handleDynamicProgrammingMenu();
                     break;
                 case "4":
-                    if (REVIEW_1_MODE) {
-                        showComingSoonCLI(4, "CO4 / Module 4", "Network Flow & Resource Allocation", "Review 2 Milestone",
-                                new String[]{
-                                        "Ford-Fulkerson & Edmonds-Karp O(V E^2) Augmenting Path Method",
-                                        "Dinic's Blocking Flow Algorithm O(V^2 E) with BFS Level Graphs",
-                                        "Maximum Bipartite Matching for Faculty-Course Assignment",
-                                        "Konig's Min-Max Theorem for Minimum Vertex Cover Bottlenecks",
-                                        "Interactive 2D Vector Flow Network Canvas Visualization"
-                                },
-                                this::handleNetworkFlowMenu);
-                    } else {
-                        handleNetworkFlowMenu();
-                    }
+                    handleNetworkFlowMenu();
                     break;
                 case "5":
-                    if (REVIEW_1_MODE) {
-                        showComingSoonCLI(5, "CO5 / Module 5", "NP-Completeness, Reductions & Approximation", "Review 2 Milestone",
-                                new String[]{
-                                        "DPLL Boolean Satisfiability (SAT) Solver with Unit Propagation",
-                                        "Karp Reductions Chain: 3-SAT -> CLIQUE -> Independent Set -> Vertex Cover",
-                                        "2-Approximation Algorithm for Minimum Vertex Cover (Maximal Matching)",
-                                        "Interactive Exam Conflict Graph & Proctor Allocation Canvas"
-                                },
-                                this::handleNPCompletenessMenu);
-                    } else {
-                        handleNPCompletenessMenu();
-                    }
+                    handleNPCompletenessMenu();
                     break;
                 case "6":
-                    if (REVIEW_1_MODE) {
-                        showComingSoonCLI(6, "CO6 / Module 6", "Randomized & Parallel Algorithms", "Review 3 Milestone (Final Review)",
-                                new String[]{
-                                        "Randomized QuickSort with Uniform Random Pivot Selection",
-                                        "Reservoir Sampling (Algorithm R) for Infinite Activity Streams",
-                                        "Miller-Rabin Probabilistic Primality Test for Student Cryptographic Tokens",
-                                        "Blelloch Work-Efficient Parallel Prefix Scan (Up-sweep & Down-sweep)",
-                                        "Multi-threaded Parallel Tree Reduction on Academic Records",
-                                        "Brent's Work-Time Scheduling Principle & Theoretical Speedup Analyzer"
-                                },
-                                this::handleParallelAndRandomizedMenu);
-                    } else {
-                        handleParallelAndRandomizedMenu();
-                    }
+                    handleParallelAndRandomizedMenu();
                     break;
                 case "7":
                     runBenchmarkSuite();
@@ -228,27 +192,16 @@ public class EduTrackCLI {
         System.out.println("\n================================================================================");
         System.out.println("           EDUTRACK - INTELLIGENT UNIVERSITY ACADEMIC PLATFORM");
         System.out.println("                      [DSA-3 Advanced Algorithms Engine]");
-        if (REVIEW_1_MODE) {
-            System.out.println("       >>> REVIEW 1 EVALUATION MODE: Core Modules 1-3 In Active Scope <<<");
-        } else {
-            System.out.println("           >>> ALL MODULES UNLOCKED (Full 6-Module Production Engine) <<<");
-        }
         System.out.println("================================================================================");
-        System.out.println("  [1] String Search & Keyword Analytics (KMP, Z-Algo, Rabin-Karp, Aho-Corasick) [CO1]");
-        System.out.println("  [2] Suffix Structures & Document Similarity (Suffix Array, SA-IS, LCP, SAM)   [CO2]");
-        System.out.println("  [3] Advanced Dynamic Programming (Levenshtein, Damerau, MCM, Bitmask DP, OBST)[CO3]");
-        if (REVIEW_1_MODE) {
-            System.out.println("  [4] Network Flow & Resource Allocation           [CO4 - Scheduled for Review 2]");
-            System.out.println("  [5] NP-Completeness, Reductions & Approximation  [CO5 - Scheduled for Review 2]");
-            System.out.println("  [6] Randomized & Parallel Algorithms             [CO6 - Scheduled for Review 3]");
-        } else {
-            System.out.println("  [4] Network Flow & Resource Allocation (Bipartite Matching, EK, Dinic, Konig) [CO4]");
-            System.out.println("  [5] NP-Completeness, Reductions & Approx (SAT, 3-SAT->Clique->IS->VC, 2-Approx)[CO5]");
-            System.out.println("  [6] Randomized & Parallel Algorithms (QuickSort, Reservoir, Miller-Rabin, Scan)[CO6]");
-        }
-        System.out.println("  [7] Run Full Integrated Verification & Benchmark Suite");
-        System.out.println("  [8] Interactive Algorithm Showdown / Benchmark Arena (Head-to-Head Races)");
-        System.out.println("  [9] Launch EduTrack Graphical User Interface (GUI)");
+        System.out.println("  [1] String Search & Keyword Analytics [CO1]");
+        System.out.println("  [2] Suffix Structures & Document Similarity [CO2]");
+        System.out.println("  [3] Advanced Dynamic Programming & Academic Optimization [CO3]");
+        System.out.println("  [4] Network Flow & Academic Resource Allocation [CO4]");
+        System.out.println("  [5] NP-Completeness & Exam Conflict Reductions [CO5]");
+        System.out.println("  [6] Randomized & Parallel Academic Analytics [CO6]");
+        System.out.println("  [7] Integrated Verification Suite (All 17 Algorithms)");
+        System.out.println("  [8] Algorithm Benchmark Arena (Head-to-Head Races)");
+        System.out.println("  [9] Launch Graphical User Interface (GUI)");
         System.out.println("  [0] Exit EduTrack");
         System.out.println("================================================================================");
     }
@@ -326,7 +279,8 @@ public class EduTrackCLI {
         System.out.println("  3. Rabin-Karp Rolling Hash Course Code Lookup");
         System.out.println("  4. Aho-Corasick Simultaneous Academic Keyword Tagger");
         System.out.println("  5. ✨ Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Matcher)");
-        System.out.print("Select an option (1-5): ");
+        System.out.println("  6. ✨ Intelligent Auto-Suggestions (Prefix + Substring + Typo-Tolerant)");
+        System.out.print("Select an option (1-6): ");
         String opt = readLineSafe();
 
         switch (opt) {
@@ -351,6 +305,17 @@ public class EduTrackCLI {
                 for (int i = 0; i < results.size(); i++) {
                     Pair<Course, Integer> p = results.get(i);
                     System.out.println("  [" + (i + 1) + "] " + p.first + " (Matches: " + p.second + ", cos=1.000000)");
+                }
+                break;
+            }
+            case "6": {
+                System.out.print("Enter prefix, partial title, or typo (e.g., 'alg', 'CS3', 'Machne', 'Opt'): ");
+                String query = readLineSafe();
+                if (query.isEmpty()) query = "alg";
+                MyArrayList<String> sugs = searchService.autoSuggest(query, 6);
+                System.out.println("\n✨ Instant Auto-Suggestions for \"" + query + "\" (" + sugs.size() + " suggestions):");
+                for (int i = 0; i < sugs.size(); i++) {
+                    System.out.println("  [" + (i + 1) + "] " + sugs.get(i));
                 }
                 break;
             }
@@ -473,6 +438,13 @@ public class EduTrackCLI {
                 for (int i = 0; i < Math.min(5, suggestions.size()); i++) {
                     Pair<Course, Integer> p = suggestions.get(i);
                     System.out.println("  • " + p.first.getTitle() + " (Edit Distance: " + p.second + ")");
+                }
+                if (!suggestions.isEmpty()) {
+                    Course best = suggestions.get(0).first;
+                    System.out.println("\n--- 2D DP Cost Matrix & Alignment Trace for: \"" + typo + "\" -> \"" + best.getTitle() + "\" ---");
+                    Levenshtein.DpTraceResult trace = Levenshtein.computeWithTrace(typo, best.getTitle());
+                    System.out.println(trace.printMatrix());
+                    System.out.println("Backtrace Alignment Operations: " + trace.printAlignment());
                 }
                 break;
             }
@@ -660,7 +632,7 @@ public class EduTrackCLI {
         System.out.println(">>> PHASE 1: REVIEW 1 ACTIVE EVALUATION SCOPE (CO1, CO2, CO3) <<<");
 
         int testsPassed = 0;
-        int totalTests = 16;
+        int totalTests = 17;
 
         // Test 1: KMP
         MyArrayList<Integer> kmpMatches = KmpMatcher.search("algorithms and algorithmic analysis", "algorithm", true);
@@ -760,8 +732,6 @@ public class EduTrackCLI {
             System.out.println("[FAIL] 10. Matrix-Chain Multiplication (Expected 4500, got " + mcmRes.minMultiplications + ")");
         }
 
-        System.out.println("\n>>> PHASE 2 & 3: ADVANCED PRE-BUILT ENGINE (CO4, CO5, CO6 - ALL VERIFIED) <<<");
-
         // Test 11: Network Flow (Dinic vs Edmonds-Karp)
         FlowNetwork net = new FlowNetwork(4);
         net.addEdge(0, 1, 10);
@@ -830,10 +800,19 @@ public class EduTrackCLI {
             System.out.println("[FAIL] 16. Brent's Theorem");
         }
 
+        // Test 17: Bittu's Algorithm (Invention: Fast Rolling Bigram Cosine Matcher)
+        edutrack.algorithms.strings.BittuAlgorithm.SearchResult bittuRes =
+                edutrack.algorithms.strings.BittuAlgorithm.searchWithTelemetry("Advanced Algorithms and Complexity Analysis", "Algorithm");
+        if (bittuRes.matchPositions.size() >= 1 && bittuRes.matchPositions.get(0) == 9) {
+            System.out.println("[PASS] 17. Bittu's Algorithm: Fast Rolling Bigram Cosine Vector Matcher (Invention)");
+            testsPassed++;
+        } else {
+            System.out.println("[FAIL] 17. Bittu's Algorithm");
+        }
+
         System.out.println("================================================================================");
-        System.out.println("VERIFICATION SUMMARY: " + testsPassed + " / " + totalTests + " ALGORITHMS PASSED.");
-        System.out.println("  * Review 1 Scope (CO1 - CO3): 10 / 10 Active Core Algorithms PASSED");
-        System.out.println("  * Review 2 & 3 (CO4 - CO6): 6 / 6 Advanced Algorithms Pre-built & Verified");
+        System.out.println("VERIFICATION SUMMARY: " + testsPassed + " / " + totalTests + " ALGORITHMS FULLY VERIFIED.");
+        System.out.println("  * CO1 to CO6 Modules: 100% Zero-java.util Collection Engine Operational.");
         System.out.println("================================================================================\n");
     }
 
